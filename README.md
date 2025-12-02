@@ -21,6 +21,16 @@ Este proyecto ofrece un análisis integral de valoración de la acción de Ally 
 ### 🤖 Modelos de IA/ML
 - **Red Neural LSTM** - Modelo de deep learning para predicción de precios
 - **Simulación Monte Carlo** - Pronóstico probabilístico usando Movimiento Browniano Geométrico
+- **🆕 Análisis de Reportes SEC con IA** - Análisis automático de 10-K/10-Q con Google Gemini
+  - Extracción de riesgos clave
+  - Identificación de KPIs principales
+  - Análisis de sentimiento del MD&A
+  - Identificación de drivers de ingresos
+- **🆕 Chatbot Financiero Inteligente** - Asistente con IA para interpretar resultados
+  - Responde preguntas sobre valoración y análisis
+  - Context-aware: acceso completo a todos los datos
+  - Explica conceptos financieros de manera simple
+  - Proporciona recomendaciones personalizadas
 
 ## 🚀 Primeros Pasos
 
@@ -48,6 +58,13 @@ source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+4. **(Nuevo)** Configura la API de Google Gemini:
+   - Obtén tu API key en [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Crea un archivo `.env` en la raíz del proyecto:
+   ```bash
+   GEMINI_API_KEY=tu_api_key_aqui
+   ```
+
 ## 💻 Uso
 
 ### Notebook de Jupyter
@@ -73,6 +90,8 @@ from src.data_loader import DataLoader
 from src.valuation import ValuationEngine
 from src.lstm_model import LSTMPredictor
 from src.monte_carlo import MonteCarloSimulation
+from src.sec_analyzer import SECAnalyzer
+from src.chatbot import ValuationChatbot
 
 # Cargar datos
 loader = DataLoader(ticker="ALLY")
@@ -92,7 +111,36 @@ mc_results = mc.run_simulation(prices['Close'])
 lstm = LSTMPredictor(sequence_length=60, epochs=25)
 lstm.train(prices['Close'])
 predictions = lstm.predict_future(prices['Close'], days_ahead=30)
+
+# 🆕 Análisis de Reportes SEC con IA
+analyzer = SECAnalyzer()
+report = analyzer.generate_full_report(ticker="ALLY", filing_type="10-K")
+print(report['resumen_ejecutivo'])
+print(f"Riesgos identificados: {len(report['riesgos'])}")
+print(f"Sentimiento: {report['sentimiento']['sentimiento_general']}")
+
+# 🆕 Chatbot Financiero Inteligente
+chatbot = ValuationChatbot()
+chatbot.set_context(
+    ticker="ALLY",
+    current_price=summary['current_price'],
+    fair_value=fair_value['fair_value_estimate'],
+    valuations=results,
+    mc_results=mc_results,
+    sec_report=report,
+    summary=summary
+)
+
+# Hacer preguntas al chatbot
+respuesta = chatbot.chat("¿Es buen momento para comprar esta acción?")
+print(respuesta)
+
+# Obtener sugerencias de preguntas
+sugerencias = chatbot.suggest_questions()
+print("Preguntas sugeridas:", sugerencias)
 ```
+
+Ver más detalles del módulo de IA en [docs/AI_MODULE.md](docs/AI_MODULE.md)
 
 ## 📁 Estructura del Proyecto
 
@@ -103,10 +151,15 @@ Valorizacion-de-Ally-Financial/
 │   ├── data_loader.py        # Carga de datos financieros (yfinance)
 │   ├── valuation.py          # Motor de métodos de valoración
 │   ├── lstm_model.py         # Modelo LSTM para predicción de precios
-│   └── monte_carlo.py        # Simulación Monte Carlo
+│   ├── monte_carlo.py        # Simulación Monte Carlo
+│   ├── sec_analyzer.py       # 🆕 Análisis de reportes SEC con IA
+│   └── chatbot.py            # 🆕 Chatbot financiero inteligente
 ├── notebooks/
 │   └── ally_valuation_analysis.ipynb  # Notebook de análisis
+├── docs/
+│   └── AI_MODULE.md          # 🆕 Documentación del módulo de IA
 ├── data/                     # Carpeta de datos (cache)
+├── .env                      # 🆕 Variables de entorno (API keys)
 ├── streamlit_app.py          # Panel Streamlit
 ├── requirements.txt          # Dependencias Python
 └── README.md                 # Este archivo
