@@ -15,6 +15,9 @@ class MonteCarloSimulation:
     Uses Geometric Brownian Motion (GBM) to simulate price paths.
     """
     
+    # Standard trading days per year
+    TRADING_DAYS_PER_YEAR = 252
+    
     def __init__(
         self,
         n_simulations: int = 10000,
@@ -62,7 +65,7 @@ class MonteCarloSimulation:
         S0: float,
         mu: float,
         sigma: float,
-        dt: float = 1/252
+        dt: float = None
     ) -> np.ndarray:
         """
         Simulate price paths using Geometric Brownian Motion.
@@ -73,11 +76,13 @@ class MonteCarloSimulation:
             S0: Initial stock price
             mu: Daily drift
             sigma: Daily volatility
-            dt: Time step (1/252 for daily)
+            dt: Time step (defaults to 1/TRADING_DAYS_PER_YEAR for daily)
             
         Returns:
             Array of simulated price paths (n_simulations x n_days)
         """
+        if dt is None:
+            dt = 1 / self.TRADING_DAYS_PER_YEAR
         # Generate random walks
         Z = np.random.standard_normal((self.n_simulations, self.n_days))
         
@@ -132,9 +137,9 @@ class MonteCarloSimulation:
         results.update({
             "initial_price": S0,
             "drift_daily": mu,
-            "drift_annual": mu * 252,
+            "drift_annual": mu * self.TRADING_DAYS_PER_YEAR,
             "volatility_daily": sigma,
-            "volatility_annual": sigma * np.sqrt(252),
+            "volatility_annual": sigma * np.sqrt(self.TRADING_DAYS_PER_YEAR),
             "n_simulations": self.n_simulations,
             "n_days": self.n_days,
             "price_paths": price_paths
@@ -316,7 +321,7 @@ class MonteCarloSimulation:
         """
         final_prices = results["final_prices"]
         days = results["n_days"]
-        T = days / 252  # Time to expiration in years
+        T = days / self.TRADING_DAYS_PER_YEAR  # Time to expiration in years
         
         if option_type.lower() == "call":
             payoffs = np.maximum(final_prices - strike_price, 0)
