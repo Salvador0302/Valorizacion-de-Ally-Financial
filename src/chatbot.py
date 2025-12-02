@@ -27,7 +27,8 @@ class ValuationChatbot:
             raise ValueError("GEMINI_API_KEY no encontrada. Asegúrate de tenerla en el archivo .env")
         
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # Usar gemini-pro que es más estable
+        self.model = genai.GenerativeModel('gemini-pro')
         self.chat_session = None
         self.context = {}
         self.conversation_history = []

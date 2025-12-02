@@ -163,23 +163,32 @@ try:
     
     fair_value_data = valuations['fair_value']
     
-    # Obtener análisis de revenue
-    revenue_analyzer = RevenueAnalyzer(ticker=ticker)
-    revenue_summary = revenue_analyzer.get_revenue_summary()
+    # Obtener análisis de revenue (con manejo de errores)
+    try:
+        with st.spinner("Cargando análisis de revenue..."):
+            revenue_analyzer = RevenueAnalyzer(ticker=ticker)
+            revenue_summary = revenue_analyzer.get_revenue_summary()
+    except Exception as e:
+        st.warning(f"⚠️ No se pudo cargar el análisis de revenue: {str(e)}")
+        revenue_summary = {}
     
     # Inicializar chatbot en session state si no existe
     if 'chatbot' not in st.session_state:
-        st.session_state['chatbot'] = ValuationChatbot()
-        st.session_state['chatbot'].set_context(
-            ticker=ticker,
-            current_price=current_price,
-            fair_value=fair_value_data['fair_value_estimate'],
-            valuations=valuations,
-            mc_results=mc_results,
-            sec_report=st.session_state.get('sec_report', {}),
-            summary=summary,
-            revenue_summary=revenue_summary
-        )
+        try:
+            st.session_state['chatbot'] = ValuationChatbot()
+            st.session_state['chatbot'].set_context(
+                ticker=ticker,
+                current_price=current_price,
+                fair_value=fair_value_data['fair_value_estimate'],
+                valuations=valuations,
+                mc_results=mc_results,
+                sec_report=st.session_state.get('sec_report', {}),
+                summary=summary,
+                revenue_summary=revenue_summary
+            )
+        except Exception as e:
+            st.warning(f"⚠️ Chatbot no disponible: {str(e)}")
+            st.session_state['chatbot'] = None
     
     # Contenido principal - Tabs principales
     main_tab1, main_tab2, main_tab3, main_tab4 = st.tabs([
@@ -202,395 +211,396 @@ try:
         - 📉 **Análisis de Estacionalidad**
         """)
         
-        # Inicializar analizador de revenue
-        with st.spinner("📊 Cargando datos de revenue..."):
-            revenue_analyzer = RevenueAnalyzer(ticker=ticker)
-            revenue_summary = revenue_analyzer.get_revenue_summary()
+        # Verificar si hay datos de revenue disponibles
+        if not revenue_summary or not revenue_summary.get('quarterly_data'):
+            st.error("❌ No se pudieron cargar los datos de revenue. Verifica tu conexión a internet.")
+            st.info("💡 Intenta recargar la página o verifica que Yahoo Finance esté disponible.")
+        else:
         
-        # Métricas principales de revenue
-        st.subheader("📊 Métricas Clave de Revenue")
+            # Métricas principales de revenue
+            st.subheader("📊 Métricas Clave de Revenue")
         
-        col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+            col_r1, col_r2, col_r3, col_r4 = st.columns(4)
         
-        with col_r1:
-            ttm_rev = revenue_summary.get('ttm_revenue', 0)
-            st.metric("Revenue TTM", format_currency(ttm_rev))
+            with col_r1:
+                ttm_rev = revenue_summary.get('ttm_revenue', 0)
+                st.metric("Revenue TTM", format_currency(ttm_rev))
         
-        with col_r2:
-            latest_q = revenue_summary.get('latest_quarterly_revenue', 0)
-            st.metric("Último Trimestre", format_currency(latest_q))
+            with col_r2:
+                latest_q = revenue_summary.get('latest_quarterly_revenue', 0)
+                st.metric("Último Trimestre", format_currency(latest_q))
         
-        with col_r3:
-            growth = revenue_summary['growth_metrics'].get('latest_growth', 0)
-            st.metric("Crecimiento YoY", f"{growth:.2f}%", delta=f"{growth:.1f}%")
+            with col_r3:
+                growth = revenue_summary['growth_metrics'].get('latest_growth', 0)
+                st.metric("Crecimiento YoY", f"{growth:.2f}%", delta=f"{growth:.1f}%")
         
-        with col_r4:
-            cagr = revenue_summary['growth_metrics'].get('cagr', 0)
-            st.metric("CAGR", f"{cagr:.2f}%")
+            with col_r4:
+                cagr = revenue_summary['growth_metrics'].get('cagr', 0)
+                st.metric("CAGR", f"{cagr:.2f}%")
         
-        st.markdown("---")
-        
-        # Tabs secundarios para diferentes análisis
-        rev_tab1, rev_tab2, rev_tab3, rev_tab4 = st.tabs([
-            "📈 Histórico & Crecimiento",
-            "🎯 Proyecciones",
-            "💡 Drivers de Revenue",
-            "📉 Estacionalidad"
-        ])
-        
-        with rev_tab1:
-            st.subheader("📈 Revenue Histórico")
-            
-            # Gráfico de revenue anual
-            annual_data = revenue_summary.get('annual_data', {})
-            if annual_data:
-                df_annual = pd.DataFrame({
-                    'Año': list(annual_data.keys()),
-                    'Revenue': list(annual_data.values())
-                })
-                df_annual['Año'] = pd.to_datetime(df_annual['Año'])
-                
-                fig_annual_rev = px.bar(
-                    df_annual,
-                    x='Año',
-                    y='Revenue',
-                    title=f"Revenue Anual de {ticker}",
-                    labels={'Revenue': 'Revenue ($)'},
-                    color='Revenue',
-                    color_continuous_scale='Blues'
-                )
-                fig_annual_rev.update_layout(height=400)
-                st.plotly_chart(fig_annual_rev, use_container_width=True)
-            
             st.markdown("---")
-            
-            # Gráfico de revenue trimestral
-            st.subheader("📊 Revenue Trimestral")
-            quarterly_data = revenue_summary.get('quarterly_data', {})
-            if quarterly_data:
-                df_quarterly = pd.DataFrame({
-                    'Período': list(quarterly_data.keys()),
-                    'Revenue': list(quarterly_data.values())
-                })
-                df_quarterly['Período'] = pd.to_datetime(df_quarterly['Período'])
-                
-                fig_quarterly_rev = go.Figure()
-                fig_quarterly_rev.add_trace(go.Scatter(
-                    x=df_quarterly['Período'],
-                    y=df_quarterly['Revenue'],
-                    mode='lines+markers',
-                    name='Revenue',
-                    line=dict(color='#1f77b4', width=3),
-                    marker=dict(size=8)
-                ))
-                
-                fig_quarterly_rev.update_layout(
-                    title=f"Revenue Trimestral de {ticker}",
-                    xaxis_title="Período",
-                    yaxis_title="Revenue ($)",
-                    height=400,
-                    hovermode='x unified'
-                )
-                st.plotly_chart(fig_quarterly_rev, use_container_width=True)
-            
-            # Métricas de crecimiento
-            st.markdown("---")
-            st.subheader("📊 Métricas de Crecimiento")
-            
-            growth_metrics = revenue_summary.get('growth_metrics', {})
-            
-            col_g1, col_g2, col_g3 = st.columns(3)
-            
-            with col_g1:
-                st.metric(
-                    "CAGR (Crecimiento Anual Compuesto)",
-                    f"{growth_metrics.get('cagr', 0):.2f}%"
-                )
-                st.caption("Tasa de crecimiento promedio anualizada")
-            
-            with col_g2:
-                st.metric(
-                    "Crecimiento Promedio Anual",
-                    f"{growth_metrics.get('avg_annual_growth', 0):.2f}%"
-                )
-                st.caption("Promedio de crecimiento año a año")
-            
-            with col_g3:
-                st.metric(
-                    "Volatilidad del Crecimiento",
-                    f"{growth_metrics.get('growth_volatility', 0):.2f}%"
-                )
-                st.caption("Desviación estándar del crecimiento")
         
-        with rev_tab2:
-            st.subheader("🎯 Proyecciones de Revenue")
-            
-            st.markdown("""
-            Proyecciones de revenue futuro usando diferentes metodologías:
-            - **Linear**: Regresión lineal sobre datos históricos
-            - **Average Growth**: Usando tasa de crecimiento promedio
-            - **CAGR**: Usando crecimiento anual compuesto
-            """)
-            
-            # Selector de método
-            forecast_method = st.selectbox(
-                "Método de Proyección",
-                ["cagr", "average_growth", "linear"],
-                format_func=lambda x: {
-                    "cagr": "CAGR (Recomendado)",
-                    "average_growth": "Crecimiento Promedio",
-                    "linear": "Regresión Lineal"
-                }[x]
-            )
-            
-            periods_forecast = st.slider("Trimestres a Proyectar", 2, 8, 4)
-            
-            # Generar proyección
-            forecast_data = revenue_analyzer.forecast_revenue(
-                periods=periods_forecast,
-                method=forecast_method
-            )
-            
-            if forecast_data.get('success'):
-                # Gráfico de proyección
-                quarterly_data = revenue_summary.get('quarterly_data', {})
-                
-                if quarterly_data:
-                    # Datos históricos
-                    df_hist = pd.DataFrame({
-                        'Período': list(quarterly_data.keys()),
-                        'Revenue': list(quarterly_data.values()),
-                        'Tipo': 'Histórico'
-                    })
-                    df_hist['Período'] = pd.to_datetime(df_hist['Período'])
-                    
-                    # Datos proyectados
-                    last_date = df_hist['Período'].max()
-                    future_dates = pd.date_range(
-                        start=last_date + pd.DateOffset(months=3),
-                        periods=periods_forecast,
-                        freq='Q'
-                    )
-                    
-                    df_forecast = pd.DataFrame({
-                        'Período': future_dates,
-                        'Revenue': forecast_data['projections'],
-                        'Tipo': 'Proyección'
-                    })
-                    
-                    # Intervalos de confianza
-                    df_forecast['Lower'] = forecast_data['confidence_intervals']['lower']
-                    df_forecast['Upper'] = forecast_data['confidence_intervals']['upper']
-                    
-                    # Combinar
-                    fig_forecast = go.Figure()
-                    
-                    # Histórico
-                    fig_forecast.add_trace(go.Scatter(
-                        x=df_hist['Período'],
-                        y=df_hist['Revenue'],
-                        mode='lines+markers',
-                        name='Histórico',
-                        line=dict(color='#1f77b4', width=2),
-                        marker=dict(size=6)
-                    ))
-                    
-                    # Proyección
-                    fig_forecast.add_trace(go.Scatter(
-                        x=df_forecast['Período'],
-                        y=df_forecast['Revenue'],
-                        mode='lines+markers',
-                        name='Proyección',
-                        line=dict(color='#ff7f0e', width=2, dash='dash'),
-                        marker=dict(size=6)
-                    ))
-                    
-                    # Intervalo de confianza
-                    fig_forecast.add_trace(go.Scatter(
-                        x=df_forecast['Período'],
-                        y=df_forecast['Upper'],
-                        mode='lines',
-                        name='IC Superior (95%)',
-                        line=dict(width=0),
-                        showlegend=False
-                    ))
-                    
-                    fig_forecast.add_trace(go.Scatter(
-                        x=df_forecast['Período'],
-                        y=df_forecast['Lower'],
-                        mode='lines',
-                        name='IC Inferior (95%)',
-                        fill='tonexty',
-                        fillcolor='rgba(255, 127, 14, 0.2)',
-                        line=dict(width=0),
-                        showlegend=True
-                    ))
-                    
-                    fig_forecast.update_layout(
-                        title=f"Proyección de Revenue - Método: {forecast_method.upper()}",
-                        xaxis_title="Período",
-                        yaxis_title="Revenue ($)",
-                        height=500,
-                        hovermode='x unified'
-                    )
-                    
-                    st.plotly_chart(fig_forecast, use_container_width=True)
-                    
-                    # Tabla de proyecciones
-                    st.markdown("### 📋 Tabla de Proyecciones")
-                    
-                    proj_table = pd.DataFrame({
-                        'Trimestre': [f"Q{i+1}" for i in range(periods_forecast)],
-                        'Período': future_dates.strftime('%Y-%m'),
-                        'Revenue Proyectado': [format_currency(p) for p in forecast_data['projections']],
-                        'Rango Inferior': [format_currency(l) for l in forecast_data['confidence_intervals']['lower']],
-                        'Rango Superior': [format_currency(u) for u in forecast_data['confidence_intervals']['upper']]
-                    })
-                    
-                    st.dataframe(proj_table, use_container_width=True, hide_index=True)
-            else:
-                st.error(f"Error en proyección: {forecast_data.get('error', 'Unknown')}")
+            # Tabs secundarios para diferentes análisis
+            rev_tab1, rev_tab2, rev_tab3, rev_tab4 = st.tabs([
+                "📈 Histórico & Crecimiento",
+                "🎯 Proyecciones",
+                "💡 Drivers de Revenue",
+                "📉 Estacionalidad"
+            ])
         
-        with rev_tab3:
-            st.subheader("💡 Drivers de Revenue Identificados")
+            with rev_tab1:
+                st.subheader("📈 Revenue Histórico")
             
-            drivers_data = revenue_summary.get('revenue_drivers', {})
-            
-            if drivers_data.get('success'):
-                drivers = drivers_data.get('drivers', [])
-                
-                st.markdown("""
-                Los principales drivers de revenue para empresas financieras como Ally Financial:
-                """)
-                
-                for i, driver in enumerate(drivers, 1):
-                    with st.expander(f"**{i}. {driver.get('driver', 'N/A')}** - Importancia: {driver.get('importance', 'N/A')}"):
-                        col_d1, col_d2 = st.columns([1, 2])
-                        
-                        with col_d1:
-                            importance = driver.get('importance', 'N/A')
-                            imp_color = {
-                                'Alta': '🔴',
-                                'Media': '🟡',
-                                'Baja': '🟢'
-                            }.get(importance, '⚪')
-                            
-                            st.metric("Importancia", f"{imp_color} {importance}")
-                            
-                            trend = driver.get('trend', 'N/A')
-                            st.metric("Tendencia", trend)
-                            
-                            if 'recent_value' in driver:
-                                st.metric("Valor Reciente", format_currency(driver['recent_value']))
-                            
-                            if 'recent_growth' in driver:
-                                growth_val = driver['recent_growth']
-                                st.metric("Crecimiento", f"{growth_val:.2f}%", delta=f"{growth_val:.1f}%")
-                        
-                        with col_d2:
-                            st.markdown("**Descripción:**")
-                            st.write(driver.get('description', 'N/A'))
-                
-                # Resumen visual
-                st.markdown("---")
-                st.markdown("### 📊 Resumen de Drivers por Importancia")
-                
-                importance_counts = pd.Series([d.get('importance', 'Unknown') for d in drivers]).value_counts()
-                
-                fig_drivers = px.pie(
-                    values=importance_counts.values,
-                    names=importance_counts.index,
-                    title="Distribución de Drivers por Importancia",
-                    color=importance_counts.index,
-                    color_discrete_map={
-                        'Alta': '#dc3545',
-                        'Media': '#ffc107',
-                        'Baja': '#28a745'
-                    }
-                )
-                st.plotly_chart(fig_drivers, use_container_width=True)
-        
-        with rev_tab4:
-            st.subheader("📉 Análisis de Estacionalidad")
-            
-            seasonality_data = revenue_summary.get('seasonality_analysis', {})
-            
-            if seasonality_data.get('success'):
-                seasonal_pattern = seasonality_data.get('seasonal_pattern', {})
-                seasonal_index = seasonality_data.get('seasonal_index', {})
-                
-                col_s1, col_s2, col_s3 = st.columns(3)
-                
-                with col_s1:
-                    strongest_q = seasonality_data.get('strongest_quarter', 0)
-                    st.metric("Trimestre Más Fuerte", f"Q{strongest_q}", help="Trimestre con mayor revenue promedio")
-                
-                with col_s2:
-                    weakest_q = seasonality_data.get('weakest_quarter', 0)
-                    st.metric("Trimestre Más Débil", f"Q{weakest_q}", help="Trimestre con menor revenue promedio")
-                
-                with col_s3:
-                    seasonality_strength = seasonality_data.get('seasonality_strength', 0)
-                    st.metric("Fuerza de Estacionalidad", f"{seasonality_strength:.2f}%", 
-                             help="Coeficiente de variación de los trimestres")
-                
-                st.markdown("---")
-                
-                # Gráfico de patrón estacional
-                if seasonal_pattern:
-                    df_seasonal = pd.DataFrame({
-                        'Trimestre': [f"Q{q}" for q in seasonal_pattern.keys()],
-                        'Revenue Promedio': list(seasonal_pattern.values())
+                # Gráfico de revenue anual
+                annual_data = revenue_summary.get('annual_data', {})
+                if annual_data:
+                    df_annual = pd.DataFrame({
+                        'Año': list(annual_data.keys()),
+                        'Revenue': list(annual_data.values())
                     })
-                    
-                    fig_seasonal = px.bar(
-                        df_seasonal,
-                        x='Trimestre',
-                        y='Revenue Promedio',
-                        title="Patrón Estacional de Revenue",
-                        color='Revenue Promedio',
+                    df_annual['Año'] = pd.to_datetime(df_annual['Año'])
+                
+                    fig_annual_rev = px.bar(
+                        df_annual,
+                        x='Año',
+                        y='Revenue',
+                        title=f"Revenue Anual de {ticker}",
+                        labels={'Revenue': 'Revenue ($)'},
+                        color='Revenue',
                         color_continuous_scale='Blues'
                     )
-                    fig_seasonal.update_layout(height=400)
-                    st.plotly_chart(fig_seasonal, use_container_width=True)
-                
-                # Índice estacional
-                st.markdown("### 📊 Índice Estacional")
-                st.markdown("*Valores sobre 100 indican revenue superior al promedio*")
-                
-                if seasonal_index:
-                    df_index = pd.DataFrame({
-                        'Trimestre': [f"Q{q}" for q in seasonal_index.keys()],
-                        'Índice': list(seasonal_index.values())
+                    fig_annual_rev.update_layout(height=400)
+                    st.plotly_chart(fig_annual_rev, use_container_width=True)
+            
+                st.markdown("---")
+            
+                # Gráfico de revenue trimestral
+                st.subheader("📊 Revenue Trimestral")
+                quarterly_data = revenue_summary.get('quarterly_data', {})
+                if quarterly_data:
+                    df_quarterly = pd.DataFrame({
+                        'Período': list(quarterly_data.keys()),
+                        'Revenue': list(quarterly_data.values())
                     })
-                    
-                    fig_index = go.Figure()
-                    
-                    colors = ['#28a745' if idx > 100 else '#dc3545' for idx in df_index['Índice']]
-                    
-                    fig_index.add_trace(go.Bar(
-                        x=df_index['Trimestre'],
-                        y=df_index['Índice'],
-                        marker_color=colors,
-                        text=[f"{idx:.1f}" for idx in df_index['Índice']],
-                        textposition='outside'
+                    df_quarterly['Período'] = pd.to_datetime(df_quarterly['Período'])
+                
+                    fig_quarterly_rev = go.Figure()
+                    fig_quarterly_rev.add_trace(go.Scatter(
+                        x=df_quarterly['Período'],
+                        y=df_quarterly['Revenue'],
+                        mode='lines+markers',
+                        name='Revenue',
+                        line=dict(color='#1f77b4', width=3),
+                        marker=dict(size=8)
                     ))
-                    
-                    fig_index.add_hline(y=100, line_dash="dash", line_color="gray",
-                                       annotation_text="Promedio (100)")
-                    
-                    fig_index.update_layout(
-                        title="Índice Estacional por Trimestre",
-                        xaxis_title="Trimestre",
-                        yaxis_title="Índice (Base 100)",
-                        height=400
+                
+                    fig_quarterly_rev.update_layout(
+                        title=f"Revenue Trimestral de {ticker}",
+                        xaxis_title="Período",
+                        yaxis_title="Revenue ($)",
+                        height=400,
+                        hovermode='x unified'
                     )
-                    st.plotly_chart(fig_index, use_container_width=True)
+                    st.plotly_chart(fig_quarterly_rev, use_container_width=True)
+            
+                # Métricas de crecimiento
+                st.markdown("---")
+                st.subheader("📊 Métricas de Crecimiento")
+            
+                growth_metrics = revenue_summary.get('growth_metrics', {})
+            
+                col_g1, col_g2, col_g3 = st.columns(3)
+            
+                with col_g1:
+                    st.metric(
+                        "CAGR (Crecimiento Anual Compuesto)",
+                        f"{growth_metrics.get('cagr', 0):.2f}%"
+                    )
+                    st.caption("Tasa de crecimiento promedio anualizada")
+            
+                with col_g2:
+                    st.metric(
+                        "Crecimiento Promedio Anual",
+                        f"{growth_metrics.get('avg_annual_growth', 0):.2f}%"
+                    )
+                    st.caption("Promedio de crecimiento año a año")
+            
+                with col_g3:
+                    st.metric(
+                        "Volatilidad del Crecimiento",
+                        f"{growth_metrics.get('growth_volatility', 0):.2f}%"
+                    )
+                    st.caption("Desviación estándar del crecimiento")
+        
+            with rev_tab2:
+                st.subheader("🎯 Proyecciones de Revenue")
+            
+                st.markdown("""
+                Proyecciones de revenue futuro usando diferentes metodologías:
+                - **Linear**: Regresión lineal sobre datos históricos
+                - **Average Growth**: Usando tasa de crecimiento promedio
+                - **CAGR**: Usando crecimiento anual compuesto
+                """)
+            
+                # Selector de método
+                forecast_method = st.selectbox(
+                    "Método de Proyección",
+                    ["cagr", "average_growth", "linear"],
+                    format_func=lambda x: {
+                        "cagr": "CAGR (Recomendado)",
+                        "average_growth": "Crecimiento Promedio",
+                        "linear": "Regresión Lineal"
+                    }[x]
+                )
+            
+                periods_forecast = st.slider("Trimestres a Proyectar", 2, 8, 4)
+            
+                # Generar proyección
+                forecast_data = revenue_analyzer.forecast_revenue(
+                    periods=periods_forecast,
+                    method=forecast_method
+                )
+            
+                if forecast_data.get('success'):
+                    # Gráfico de proyección
+                    quarterly_data = revenue_summary.get('quarterly_data', {})
+                
+                    if quarterly_data:
+                        # Datos históricos
+                        df_hist = pd.DataFrame({
+                            'Período': list(quarterly_data.keys()),
+                            'Revenue': list(quarterly_data.values()),
+                            'Tipo': 'Histórico'
+                        })
+                        df_hist['Período'] = pd.to_datetime(df_hist['Período'])
                     
-                    # Tabla de índices
-                    st.dataframe(df_index, use_container_width=True, hide_index=True)
-            else:
-                st.info("Datos insuficientes para análisis de estacionalidad")
+                        # Datos proyectados
+                        last_date = df_hist['Período'].max()
+                        future_dates = pd.date_range(
+                            start=last_date + pd.DateOffset(months=3),
+                            periods=periods_forecast,
+                            freq='Q'
+                        )
+                    
+                        df_forecast = pd.DataFrame({
+                            'Período': future_dates,
+                            'Revenue': forecast_data['projections'],
+                            'Tipo': 'Proyección'
+                        })
+                    
+                        # Intervalos de confianza
+                        df_forecast['Lower'] = forecast_data['confidence_intervals']['lower']
+                        df_forecast['Upper'] = forecast_data['confidence_intervals']['upper']
+                    
+                        # Combinar
+                        fig_forecast = go.Figure()
+                    
+                        # Histórico
+                        fig_forecast.add_trace(go.Scatter(
+                            x=df_hist['Período'],
+                            y=df_hist['Revenue'],
+                            mode='lines+markers',
+                            name='Histórico',
+                            line=dict(color='#1f77b4', width=2),
+                            marker=dict(size=6)
+                        ))
+                    
+                        # Proyección
+                        fig_forecast.add_trace(go.Scatter(
+                            x=df_forecast['Período'],
+                            y=df_forecast['Revenue'],
+                            mode='lines+markers',
+                            name='Proyección',
+                            line=dict(color='#ff7f0e', width=2, dash='dash'),
+                            marker=dict(size=6)
+                        ))
+                    
+                        # Intervalo de confianza
+                        fig_forecast.add_trace(go.Scatter(
+                            x=df_forecast['Período'],
+                            y=df_forecast['Upper'],
+                            mode='lines',
+                            name='IC Superior (95%)',
+                            line=dict(width=0),
+                            showlegend=False
+                        ))
+                    
+                        fig_forecast.add_trace(go.Scatter(
+                            x=df_forecast['Período'],
+                            y=df_forecast['Lower'],
+                            mode='lines',
+                            name='IC Inferior (95%)',
+                            fill='tonexty',
+                            fillcolor='rgba(255, 127, 14, 0.2)',
+                            line=dict(width=0),
+                            showlegend=True
+                        ))
+                    
+                        fig_forecast.update_layout(
+                            title=f"Proyección de Revenue - Método: {forecast_method.upper()}",
+                            xaxis_title="Período",
+                            yaxis_title="Revenue ($)",
+                            height=500,
+                            hovermode='x unified'
+                        )
+                    
+                        st.plotly_chart(fig_forecast, use_container_width=True)
+                    
+                        # Tabla de proyecciones
+                        st.markdown("### 📋 Tabla de Proyecciones")
+                    
+                        proj_table = pd.DataFrame({
+                            'Trimestre': [f"Q{i+1}" for i in range(periods_forecast)],
+                            'Período': future_dates.strftime('%Y-%m'),
+                            'Revenue Proyectado': [format_currency(p) for p in forecast_data['projections']],
+                            'Rango Inferior': [format_currency(l) for l in forecast_data['confidence_intervals']['lower']],
+                            'Rango Superior': [format_currency(u) for u in forecast_data['confidence_intervals']['upper']]
+                        })
+                    
+                        st.dataframe(proj_table, use_container_width=True, hide_index=True)
+                else:
+                    st.error(f"Error en proyección: {forecast_data.get('error', 'Unknown')}")
+        
+            with rev_tab3:
+                st.subheader("💡 Drivers de Revenue Identificados")
+            
+                drivers_data = revenue_summary.get('revenue_drivers', {})
+            
+                if drivers_data.get('success'):
+                    drivers = drivers_data.get('drivers', [])
+                
+                    st.markdown("""
+                    Los principales drivers de revenue para empresas financieras como Ally Financial:
+                    """)
+                
+                    for i, driver in enumerate(drivers, 1):
+                        with st.expander(f"**{i}. {driver.get('driver', 'N/A')}** - Importancia: {driver.get('importance', 'N/A')}"):
+                            col_d1, col_d2 = st.columns([1, 2])
+                        
+                            with col_d1:
+                                importance = driver.get('importance', 'N/A')
+                                imp_color = {
+                                    'Alta': '🔴',
+                                    'Media': '🟡',
+                                    'Baja': '🟢'
+                                }.get(importance, '⚪')
+                            
+                                st.metric("Importancia", f"{imp_color} {importance}")
+                            
+                                trend = driver.get('trend', 'N/A')
+                                st.metric("Tendencia", trend)
+                            
+                                if 'recent_value' in driver:
+                                    st.metric("Valor Reciente", format_currency(driver['recent_value']))
+                            
+                                if 'recent_growth' in driver:
+                                    growth_val = driver['recent_growth']
+                                    st.metric("Crecimiento", f"{growth_val:.2f}%", delta=f"{growth_val:.1f}%")
+                        
+                            with col_d2:
+                                st.markdown("**Descripción:**")
+                                st.write(driver.get('description', 'N/A'))
+                
+                    # Resumen visual
+                    st.markdown("---")
+                    st.markdown("### 📊 Resumen de Drivers por Importancia")
+                
+                    importance_counts = pd.Series([d.get('importance', 'Unknown') for d in drivers]).value_counts()
+                
+                    fig_drivers = px.pie(
+                        values=importance_counts.values,
+                        names=importance_counts.index,
+                        title="Distribución de Drivers por Importancia",
+                        color=importance_counts.index,
+                        color_discrete_map={
+                            'Alta': '#dc3545',
+                            'Media': '#ffc107',
+                            'Baja': '#28a745'
+                        }
+                    )
+                    st.plotly_chart(fig_drivers, use_container_width=True)
+        
+            with rev_tab4:
+                st.subheader("📉 Análisis de Estacionalidad")
+            
+                seasonality_data = revenue_summary.get('seasonality_analysis', {})
+            
+                if seasonality_data.get('success'):
+                    seasonal_pattern = seasonality_data.get('seasonal_pattern', {})
+                    seasonal_index = seasonality_data.get('seasonal_index', {})
+                
+                    col_s1, col_s2, col_s3 = st.columns(3)
+                
+                    with col_s1:
+                        strongest_q = seasonality_data.get('strongest_quarter', 0)
+                        st.metric("Trimestre Más Fuerte", f"Q{strongest_q}", help="Trimestre con mayor revenue promedio")
+                
+                    with col_s2:
+                        weakest_q = seasonality_data.get('weakest_quarter', 0)
+                        st.metric("Trimestre Más Débil", f"Q{weakest_q}", help="Trimestre con menor revenue promedio")
+                
+                    with col_s3:
+                        seasonality_strength = seasonality_data.get('seasonality_strength', 0)
+                        st.metric("Fuerza de Estacionalidad", f"{seasonality_strength:.2f}%", 
+                                 help="Coeficiente de variación de los trimestres")
+                
+                    st.markdown("---")
+                
+                    # Gráfico de patrón estacional
+                    if seasonal_pattern:
+                        df_seasonal = pd.DataFrame({
+                            'Trimestre': [f"Q{q}" for q in seasonal_pattern.keys()],
+                            'Revenue Promedio': list(seasonal_pattern.values())
+                        })
+                    
+                        fig_seasonal = px.bar(
+                            df_seasonal,
+                            x='Trimestre',
+                            y='Revenue Promedio',
+                            title="Patrón Estacional de Revenue",
+                            color='Revenue Promedio',
+                            color_continuous_scale='Blues'
+                        )
+                        fig_seasonal.update_layout(height=400)
+                        st.plotly_chart(fig_seasonal, use_container_width=True)
+                
+                    # Índice estacional
+                    st.markdown("### 📊 Índice Estacional")
+                    st.markdown("*Valores sobre 100 indican revenue superior al promedio*")
+                
+                    if seasonal_index:
+                        df_index = pd.DataFrame({
+                            'Trimestre': [f"Q{q}" for q in seasonal_index.keys()],
+                            'Índice': list(seasonal_index.values())
+                        })
+                    
+                        fig_index = go.Figure()
+                    
+                        colors = ['#28a745' if idx > 100 else '#dc3545' for idx in df_index['Índice']]
+                    
+                        fig_index.add_trace(go.Bar(
+                            x=df_index['Trimestre'],
+                            y=df_index['Índice'],
+                            marker_color=colors,
+                            text=[f"{idx:.1f}" for idx in df_index['Índice']],
+                            textposition='outside'
+                        ))
+                    
+                        fig_index.add_hline(y=100, line_dash="dash", line_color="gray",
+                                           annotation_text="Promedio (100)")
+                    
+                        fig_index.update_layout(
+                            title="Índice Estacional por Trimestre",
+                            xaxis_title="Trimestre",
+                            yaxis_title="Índice (Base 100)",
+                            height=400
+                        )
+                        st.plotly_chart(fig_index, use_container_width=True)
+                    
+                        # Tabla de índices
+                        st.dataframe(df_index, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Datos insuficientes para análisis de estacionalidad")
     
     with main_tab3:
         # Nueva sección de análisis con IA
