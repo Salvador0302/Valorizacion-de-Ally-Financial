@@ -1,7 +1,7 @@
 """
-Data Loader Module
-==================
-Loads financial data for Ally Financial using yfinance and pandas.
+Módulo de Carga de Datos
+=========================
+Carga datos financieros de Ally Financial utilizando yfinance y pandas.
 """
 
 import yfinance as yf
@@ -13,15 +13,15 @@ from datetime import datetime, timedelta
 
 class DataLoader:
     """
-    Loads and manages financial data for stock valuation.
+    Carga y gestiona datos financieros para la valoración de acciones.
     """
     
     def __init__(self, ticker: str = "ALLY"):
         """
-        Initialize the DataLoader with a ticker symbol.
+        Inicializa el DataLoader con un símbolo ticker.
         
         Args:
-            ticker: Stock ticker symbol (default: "ALLY")
+            ticker: Símbolo del activo (por defecto: "ALLY")
         """
         self.ticker = ticker
         self.stock = yf.Ticker(ticker)
@@ -33,7 +33,7 @@ class DataLoader:
     
     @property
     def info(self) -> Dict[str, Any]:
-        """Get stock info (cached)."""
+        """Obtener información del activo (con caché)."""
         if self._info is None:
             self._info = self.stock.info
         return self._info
@@ -44,14 +44,14 @@ class DataLoader:
         interval: str = "1d"
     ) -> pd.DataFrame:
         """
-        Get historical price data.
+        Obtener datos históricos de precios.
         
         Args:
-            period: Time period (e.g., "1y", "5y", "max")
-            interval: Data interval (e.g., "1d", "1wk", "1mo")
+            period: Periodo de tiempo (ej.: "1y", "5y", "max")
+            interval: Intervalo de datos (ej.: "1d", "1wk", "1mo")
             
         Returns:
-            DataFrame with historical prices
+            DataFrame con los precios históricos
         """
         if self._history is None or True:  # Always refresh historical data
             self._history = self.stock.history(period=period, interval=interval)
@@ -59,10 +59,10 @@ class DataLoader:
     
     def get_financials(self) -> pd.DataFrame:
         """
-        Get income statement data.
+        Obtener datos del estado de resultados.
         
         Returns:
-            DataFrame with income statement data
+            DataFrame con el estado de resultados
         """
         if self._financials is None:
             self._financials = self.stock.financials
@@ -70,10 +70,10 @@ class DataLoader:
     
     def get_balance_sheet(self) -> pd.DataFrame:
         """
-        Get balance sheet data.
+        Obtener datos del balance general.
         
         Returns:
-            DataFrame with balance sheet data
+            DataFrame con el balance general
         """
         if self._balance_sheet is None:
             self._balance_sheet = self.stock.balance_sheet
@@ -81,10 +81,10 @@ class DataLoader:
     
     def get_cash_flow(self) -> pd.DataFrame:
         """
-        Get cash flow statement data.
+        Obtener datos del estado de flujos de efectivo.
         
         Returns:
-            DataFrame with cash flow data
+            DataFrame con los flujos de efectivo
         """
         if self._cash_flow is None:
             self._cash_flow = self.stock.cashflow
@@ -92,52 +92,52 @@ class DataLoader:
     
     def get_current_price(self) -> float:
         """
-        Get the current stock price.
+        Obtener el precio actual de la acción.
         
         Returns:
-            Current stock price
+            Precio actual de la acción
         """
         return self.info.get("currentPrice", self.info.get("regularMarketPrice", 0))
     
     def get_shares_outstanding(self) -> int:
         """
-        Get the number of shares outstanding.
+        Obtener el número de acciones en circulación.
         
         Returns:
-            Number of shares outstanding
+            Número de acciones en circulación
         """
         return self.info.get("sharesOutstanding", 0)
     
     def get_market_cap(self) -> float:
         """
-        Get the market capitalization.
+        Obtener la capitalización de mercado.
         
         Returns:
-            Market capitalization
+            Capitalización de mercado
         """
         return self.info.get("marketCap", 0)
     
     def get_book_value_per_share(self) -> float:
         """
-        Get book value per share.
+        Obtener el valor contable por acción.
         
         Returns:
-            Book value per share
+            Valor contable por acción
         """
         return self.info.get("bookValue", 0)
     
     def get_total_equity(self) -> float:
         """
-        Get total stockholders' equity from balance sheet.
+        Obtener el patrimonio neto total desde el balance.
         
         Returns:
-            Total equity
+            Patrimonio total
         """
         balance_sheet = self.get_balance_sheet()
         if balance_sheet.empty:
             return 0
         
-        # Try different possible column names for equity
+        # Intentar diferentes nombres de fila que puedan contener el patrimonio
         equity_keys = [
             "Stockholders Equity",
             "Total Stockholders Equity", 
@@ -152,10 +152,10 @@ class DataLoader:
     
     def get_total_assets(self) -> float:
         """
-        Get total assets from balance sheet.
+        Obtener los activos totales desde el balance.
         
         Returns:
-            Total assets
+            Activos totales
         """
         balance_sheet = self.get_balance_sheet()
         if balance_sheet.empty:
@@ -167,10 +167,10 @@ class DataLoader:
     
     def get_total_liabilities(self) -> float:
         """
-        Get total liabilities from balance sheet.
+        Obtener los pasivos totales desde el balance.
         
         Returns:
-            Total liabilities
+            Pasivos totales
         """
         balance_sheet = self.get_balance_sheet()
         if balance_sheet.empty:
@@ -188,10 +188,10 @@ class DataLoader:
     
     def get_intangible_assets(self) -> float:
         """
-        Get intangible assets from balance sheet.
+        Obtener activos intangibles desde el balance.
         
         Returns:
-            Intangible assets value
+            Valor de intangibles
         """
         balance_sheet = self.get_balance_sheet()
         if balance_sheet.empty:
@@ -213,10 +213,10 @@ class DataLoader:
     
     def get_net_income(self) -> float:
         """
-        Get net income from income statement.
+        Obtener el beneficio neto desde el estado de resultados.
         
         Returns:
-            Net income
+            Beneficio neto
         """
         financials = self.get_financials()
         if financials.empty:
@@ -228,7 +228,7 @@ class DataLoader:
     
     def get_earnings_per_share(self) -> float:
         """
-        Get trailing earnings per share.
+        Obtener las ganancias por acción (EPS) acumuladas.
         
         Returns:
             EPS
@@ -237,28 +237,28 @@ class DataLoader:
     
     def get_dividend_per_share(self) -> float:
         """
-        Get dividend per share.
+        Obtener el dividendo por acción.
         
         Returns:
-            Dividend per share
+            Dividendo por acción
         """
         return self.info.get("dividendRate", 0)
     
     def get_dividend_yield(self) -> float:
         """
-        Get dividend yield.
+        Obtener el rendimiento por dividendo.
         
         Returns:
-            Dividend yield as decimal
+            Rendimiento por dividendo (decimal)
         """
         return self.info.get("dividendYield", 0)
     
     def get_free_cash_flow(self) -> float:
         """
-        Get free cash flow from cash flow statement.
+        Obtener el flujo de caja libre desde el estado de flujos.
         
         Returns:
-            Free cash flow
+            Flujo de caja libre
         """
         cash_flow = self.get_cash_flow()
         if cash_flow.empty:
@@ -267,7 +267,7 @@ class DataLoader:
         if "Free Cash Flow" in cash_flow.index:
             return float(cash_flow.loc["Free Cash Flow"].iloc[0])
         
-        # Calculate FCF as Operating Cash Flow - Capital Expenditures
+        # Calcular FCF como Flujo operativo + CapEx (CapEx suele ser negativo)
         operating_cf = 0
         capex = 0
         
@@ -281,22 +281,22 @@ class DataLoader:
     
     def get_beta(self) -> float:
         """
-        Get stock beta.
+        Obtener la beta de la acción.
         
         Returns:
-            Beta value
+            Valor de beta
         """
         return self.info.get("beta", 1.0)
     
     def get_peer_tickers(self) -> list:
         """
-        Get list of peer company tickers for comparable analysis.
-        For Ally Financial, these are other financial services companies.
+        Obtener la lista de tickers de empresas pares para el análisis por comparables.
+        Para Ally Financial, se usan otras empresas de servicios financieros.
         
         Returns:
-            List of peer ticker symbols
+            Lista de símbolos ticker de pares
         """
-        # Major financial services peers for ALLY
+        # Principales empresas pares del sector financiero para ALLY
         return ["COF", "SYF", "DFS", "AXP", "C"]
     
     def get_peer_data(self) -> pd.DataFrame:

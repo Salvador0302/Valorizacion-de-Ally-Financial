@@ -1,72 +1,72 @@
-# Ally Financial (ALLY) Stock Valuation Project
+# Proyecto de Valoración de Ally Financial (ALLY)
 
-**Comprehensive stock valuation analysis for Ally Financial using classical financial methods and AI-powered predictions.**
+**Análisis integral de valoración de acciones de Ally Financial usando métodos financieros clásicos y predicciones con IA.**
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 📋 Overview
+## 📋 Resumen
 
-This project provides a comprehensive valuation analysis of Ally Financial (ALLY) stock using multiple approaches:
+Este proyecto ofrece un análisis integral de valoración de la acción de Ally Financial (ALLY) utilizando varios enfoques:
 
-### 📊 Traditional Valuation Methods
-- **Book Value** - Basic equity valuation
-- **Adjusted Book Value** - Equity minus intangible assets
-- **P/E Ratio Analysis** - Earnings-based valuation with industry comparisons
-- **Dividend Discount Model (DDM)** - Present value of future dividends
-- **Comparable Companies Analysis** - Peer multiples comparison
-- **DCF (Free Cash Flow)** - Discounted cash flow valuation
+### 📊 Métodos de Valoración Tradicionales
+- **Valor Contable** - Valoración básica por patrimonio
+- **Valor Contable Ajustado** - Patrimonio menos activos intangibles
+- **Relación P/E** - Valoración basada en ganancias y comparación sectorial
+- **Modelo de Descuento de Dividendos (DDM)** - Valor presente de dividendos futuros
+- **Empresas Comparables** - Comparación mediante múltiplos de pares
+- **DCF (Flujo de Caja Libre)** - Valoración por descuento de flujos de caja
 
-### 🤖 AI/ML Models
-- **LSTM Neural Network** - Deep learning model for price prediction
-- **Monte Carlo Simulation** - Probabilistic price forecasting using Geometric Brownian Motion
+### 🤖 Modelos de IA/ML
+- **Red Neural LSTM** - Modelo de deep learning para predicción de precios
+- **Simulación Monte Carlo** - Pronóstico probabilístico usando Movimiento Browniano Geométrico
 
-## 🚀 Getting Started
+## 🚀 Primeros Pasos
 
-### Prerequisites
+### Requisitos
 
-- Python 3.9 or higher
-- pip package manager
+- Python 3.9 o superior
+- pip
 
-### Installation
+### Instalación
 
-1. Clone the repository:
+1. Clona el repositorio:
 ```bash
 git clone https://github.com/Salvador0302/Valorizacion-de-Ally-Financial.git
 cd Valorizacion-de-Ally-Financial
 ```
 
-2. Create a virtual environment (recommended):
+2. Crea un entorno virtual (recomendado):
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3. Instala las dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-## 💻 Usage
+## 💻 Uso
 
-### Jupyter Notebook
+### Notebook de Jupyter
 
-Run the comprehensive analysis notebook:
+Ejecuta el notebook de análisis completo:
 ```bash
 jupyter notebook notebooks/ally_valuation_analysis.ipynb
 ```
 
-### Streamlit Dashboard
+### Panel interactivo (Streamlit)
 
-Launch the interactive dashboard:
+Inicia el panel interactivo:
 ```bash
 streamlit run streamlit_app.py
 ```
 
-The dashboard will open in your browser at `http://localhost:8501`
+El panel se abrirá en tu navegador en `http://localhost:8501`
 
-### Python Module Usage
+### Uso como módulo Python
 
 ```python
 from src.data_loader import DataLoader
@@ -74,134 +74,134 @@ from src.valuation import ValuationEngine
 from src.lstm_model import LSTMPredictor
 from src.monte_carlo import MonteCarloSimulation
 
-# Load data
+# Cargar datos
 loader = DataLoader(ticker="ALLY")
 summary = loader.get_summary()
 prices = loader.get_historical_prices(period="5y")
 
-# Run valuations
+# Ejecutar valoraciones
 valuation = ValuationEngine(data_loader=loader)
 results = valuation.get_all_valuations()
 fair_value = valuation.get_fair_value_estimate()
 
-# Monte Carlo simulation
+# Simulación Monte Carlo
 mc = MonteCarloSimulation(n_simulations=10000, n_days=252)
 mc_results = mc.run_simulation(prices['Close'])
 
-# LSTM predictions (requires TensorFlow)
+# Predicciones LSTM (requiere TensorFlow)
 lstm = LSTMPredictor(sequence_length=60, epochs=25)
 lstm.train(prices['Close'])
 predictions = lstm.predict_future(prices['Close'], days_ahead=30)
 ```
 
-## 📁 Project Structure
+## 📁 Estructura del Proyecto
 
 ```
 Valorizacion-de-Ally-Financial/
 ├── src/
-│   ├── __init__.py           # Package initialization
-│   ├── data_loader.py        # Financial data loading (yfinance)
-│   ├── valuation.py          # Valuation methods engine
-│   ├── lstm_model.py         # LSTM price prediction model
-│   └── monte_carlo.py        # Monte Carlo simulation
+│   ├── __init__.py           # Inicialización del paquete
+│   ├── data_loader.py        # Carga de datos financieros (yfinance)
+│   ├── valuation.py          # Motor de métodos de valoración
+│   ├── lstm_model.py         # Modelo LSTM para predicción de precios
+│   └── monte_carlo.py        # Simulación Monte Carlo
 ├── notebooks/
-│   └── ally_valuation_analysis.ipynb  # Jupyter analysis notebook
-├── data/                     # Data directory (for cached data)
-├── streamlit_app.py          # Streamlit dashboard
-├── requirements.txt          # Python dependencies
-└── README.md                 # This file
+│   └── ally_valuation_analysis.ipynb  # Notebook de análisis
+├── data/                     # Carpeta de datos (cache)
+├── streamlit_app.py          # Panel Streamlit
+├── requirements.txt          # Dependencias Python
+└── README.md                 # Este archivo
 ```
 
-## 📈 Valuation Methods Explained
+## 📈 Explicación de los Métodos de Valoración
 
-### 1. Book Value
-- **Formula**: Total Equity / Shares Outstanding
-- **Use Case**: Conservative floor valuation for asset-heavy companies
+### 1. Valor Contable
+- **Fórmula**: Patrimonio Total / Acciones en Circulación
+- **Uso**: Estimación conservadora para empresas con muchos activos
 
-### 2. Adjusted Book Value
-- **Formula**: (Total Equity - Intangible Assets) / Shares Outstanding
-- **Use Case**: More conservative estimate excluding goodwill and intangibles
+### 2. Valor Contable Ajustado
+- **Fórmula**: (Patrimonio Total - Activos Intangibles) / Acciones
+- **Uso**: Estimación más conservadora excluyendo goodwill e intangibles
 
-### 3. P/E Ratio
-- **Formula**: EPS × Target P/E (industry median)
-- **Use Case**: Quick relative valuation against peers
+### 3. Relación P/E
+- **Fórmula**: EPS × P/E objetivo (mediana sectorial)
+- **Uso**: Valor relativo frente a pares
 
-### 4. Dividend Discount Model (DDM)
-- **Formula**: PV of Stage 1 Dividends + PV of Terminal Value
-- **Use Case**: Income-focused valuation for dividend-paying stocks
+### 4. Modelo de Descuento de Dividendos (DDM)
+- **Fórmula**: VP de dividendos de la etapa 1 + VP del valor terminal
+- **Uso**: Valoración para empresas que pagan dividendos
 
-### 5. Comparable Companies
-- **Approach**: Uses median P/E and P/B multiples from peer companies
-- **Peers**: COF, SYF, DFS, AXP, C (financial services sector)
+### 5. Empresas Comparables
+- **Enfoque**: Usa las medianas de P/E y P/B de empresas pares
+- **Pares**: COF, SYF, DFS, AXP, C (sector servicios financieros)
 
-### 6. DCF (Free Cash Flow)
-- **Formula**: Sum of discounted FCFs + PV of Terminal Value
-- **Use Case**: Fundamental intrinsic value estimation
+### 6. DCF (Flujo de Caja Libre)
+- **Fórmula**: Suma de FCF descontados + VP del valor terminal
+- **Uso**: Estimación de valor intrínseco basada en fundamentales
 
-### 7. LSTM Neural Network
-- **Architecture**: 2 LSTM layers with dropout, Dense output
-- **Use Case**: Pattern-based price prediction
+### 7. LSTM
+- **Arquitectura**: 2 capas LSTM con dropout y una capa Dense de salida
+- **Uso**: Predicción basada en patrones de series temporales
 
-### 8. Monte Carlo Simulation
-- **Model**: Geometric Brownian Motion (GBM)
-- **Use Case**: Probabilistic price distribution and risk metrics (VaR, CVaR)
+### 8. Monte Carlo
+- **Modelo**: Movimiento Browniano Geométrico (GBM)
+- **Uso**: Distribución probabilística de precios y métricas de riesgo (VaR, CVaR)
 
-## 📊 Dashboard Features
+## 📊 Funcionalidades del Panel
 
-The Streamlit dashboard provides:
+El panel Streamlit incluye:
 
-- **Key Metrics Display**: Current price, market cap, EPS, dividend yield
-- **Interactive Price Charts**: Historical OHLC candlestick charts
-- **Valuation Analysis Tabs**: Detailed breakdown of each method
-- **Comparison Charts**: Visual comparison of all valuation results
-- **Monte Carlo Visualization**: Price paths and distribution plots
-- **LSTM Predictions**: Optional AI-based forecasting
-- **Investment Recommendation**: Automated buy/hold/sell signal
+- **Métricas clave**: Precio actual, capitalización, EPS, yield de dividendos
+- **Gráficos interactivos**: Velas OHLC y volumen histórico
+- **Pestañas de valoración**: Desglose detallado por método
+- **Gráficos comparativos**: Comparación visual de resultados
+- **Visualización Monte Carlo**: Rutas de precio y distribución final
+- **Predicciones LSTM**: Pronóstico opcional con IA
+- **Recomendación de inversión**: Señal automática de compra/mantener/venta
 
-## 🛠️ Configuration
+## 🛠️ Configuración
 
-### Valuation Parameters (adjustable in dashboard)
+### Parámetros de Valoración (ajustables en el panel)
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Required Return (WACC) | 10% | Discount rate for DCF/DDM |
-| Growth Rate (Stage 1) | 5% | Near-term growth rate |
-| Terminal Growth | 2% | Long-term perpetual growth |
-| Forecast Years | 5 | Explicit forecast period |
+| Parámetro | Valor por defecto | Descripción |
+|-----------|-------------------|-------------|
+| Rentabilidad requerida (WACC) | 10% | Tasa de descuento para DCF/DDM |
+| Tasa de crecimiento (Etapa 1) | 5% | Crecimiento esperado a corto plazo |
+| Crecimiento terminal | 2% | Crecimiento perpetuo a largo plazo |
+| Años de pronóstico | 5 | Periodo explícito de pronóstico |
 
-### Monte Carlo Parameters
+### Parámetros de Monte Carlo
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Number of Simulations | 10,000 | Price path simulations |
-| Forecast Days | 252 | Trading days (1 year) |
+| Parámetro | Valor por defecto | Descripción |
+|-----------|-------------------|-------------|
+| Número de simulaciones | 10,000 | Simulaciones de trayectorias de precio |
+| Días de pronóstico | 252 | Días de negociación (1 año) |
 
-## 📚 Dependencies
+## 📚 Dependencias
 
-- **yfinance**: Yahoo Finance API for financial data
-- **pandas/numpy**: Data manipulation and numerical operations
-- **tensorflow**: LSTM neural network (optional)
-- **scikit-learn**: Data preprocessing
-- **matplotlib/seaborn/plotly**: Visualization
-- **streamlit**: Interactive dashboard
+- **yfinance**: API de Yahoo Finance para datos
+- **pandas/numpy**: Manipulación de datos y operaciones numéricas
+- **tensorflow**: Red LSTM (opcional)
+- **scikit-learn**: Preprocesado
+- **matplotlib/seaborn/plotly**: Visualización
+- **streamlit**: Panel interactivo
 
-## ⚠️ Disclaimer
+## ⚠️ Aviso (Disclaimer)
 
-This project is for **educational purposes only** and should not be considered as financial advice. Stock valuations involve significant uncertainty and assumptions. Always:
+Este proyecto es únicamente con fines **educativos** y no debe interpretarse como asesoría financiera. Las valoraciones de acciones implican incertidumbre y supuestos. Siempre:
 
-- Conduct your own research
-- Consult with a qualified financial advisor
-- Understand that past performance does not guarantee future results
-- Consider your own risk tolerance and investment objectives
+- Realiza tu propia investigación
+- Consulta con un asesor financiero cualificado
+- Ten en cuenta que el rendimiento pasado no garantiza resultados futuros
+- Considera tu tolerancia al riesgo y objetivos de inversión
 
-## 📄 License
+## 📄 Licencia
 
-This project is open source and available under the MIT License.
+Este proyecto es open source y está disponible bajo la licencia MIT.
 
-## 🤝 Contributing
+## 🤝 Contribuciones
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+¡Las contribuciones son bienvenidas! Abre un Pull Request.
 
-## 📧 Contact
+## 📧 Contacto
 
-For questions or suggestions, please open an issue in this repository.
+Para preguntas o sugerencias, abre un issue en este repositorio.

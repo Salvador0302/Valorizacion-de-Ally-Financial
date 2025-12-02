@@ -1,7 +1,7 @@
 """
-Monte Carlo Simulation Module
-=============================
-Simulates future stock price paths using geometric Brownian motion.
+Módulo de Simulación Monte Carlo
+================================
+Simula trayectorias de precios futuros usando Movimiento Browniano Geométrico.
 """
 
 import numpy as np
@@ -11,8 +11,8 @@ from typing import Dict, Any, Optional, Tuple
 
 class MonteCarloSimulation:
     """
-    Monte Carlo simulation for stock price prediction.
-    Uses Geometric Brownian Motion (GBM) to simulate price paths.
+    Simulación Monte Carlo para la predicción de precios de acciones.
+    Utiliza Movimiento Browniano Geométrico (GBM) para simular trayectorias.
     """
     
     # Standard trading days per year
@@ -25,12 +25,12 @@ class MonteCarloSimulation:
         random_seed: Optional[int] = None
     ):
         """
-        Initialize the Monte Carlo simulator.
+        Inicializa el simulador Monte Carlo.
         
         Args:
-            n_simulations: Number of simulation paths
-            n_days: Number of trading days to simulate (252 = 1 year)
-            random_seed: Random seed for reproducibility
+            n_simulations: Número de trayectorias a simular
+            n_days: Número de días de negociación a simular (252 = 1 año)
+            random_seed: Semilla aleatoria para reproducibilidad
         """
         self.n_simulations = n_simulations
         self.n_days = n_days
@@ -43,13 +43,13 @@ class MonteCarloSimulation:
         prices: pd.Series
     ) -> Tuple[float, float]:
         """
-        Calculate drift (mu) and volatility (sigma) from historical prices.
+        Calcular deriva (mu) y volatilidad (sigma) a partir de precios históricos.
         
         Args:
-            prices: Series of historical prices
+            prices: Serie de precios históricos
             
         Returns:
-            Tuple of (drift, volatility)
+            Tupla (drift, volatility)
         """
         # Calculate daily returns
         returns = np.log(prices / prices.shift(1)).dropna()
@@ -68,18 +68,18 @@ class MonteCarloSimulation:
         dt: float = None
     ) -> np.ndarray:
         """
-        Simulate price paths using Geometric Brownian Motion.
+        Simular trayectorias de precio usando Movimiento Browniano Geométrico.
         
         GBM: dS = mu*S*dt + sigma*S*dW
         
         Args:
-            S0: Initial stock price
-            mu: Daily drift
-            sigma: Daily volatility
-            dt: Time step (defaults to 1/TRADING_DAYS_PER_YEAR for daily)
+            S0: Precio inicial
+            mu: Deriva diaria
+            sigma: Volatilidad diaria
+            dt: Paso temporal (por defecto 1/TRADING_DAYS_PER_YEAR para datos diarios)
             
         Returns:
-            Array of simulated price paths (n_simulations x n_days)
+            Array con trayectorias simuladas (n_simulations x n_days)
         """
         if dt is None:
             dt = 1 / self.TRADING_DAYS_PER_YEAR
@@ -108,14 +108,14 @@ class MonteCarloSimulation:
         n_days: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Run Monte Carlo simulation on historical price data.
+        Ejecutar simulación Monte Carlo sobre datos históricos.
         
         Args:
-            prices: Series of historical prices
-            n_days: Override for number of days to simulate
+            prices: Serie de precios históricos
+            n_days: Anular el número de días a simular
             
         Returns:
-            Dictionary with simulation results
+            Diccionario con los resultados de la simulación
         """
         if n_days is not None:
             self.n_days = n_days
@@ -154,15 +154,15 @@ class MonteCarloSimulation:
         price_paths: np.ndarray
     ) -> Dict[str, Any]:
         """
-        Calculate statistics from simulation results.
+        Calcular estadísticas a partir de los resultados de la simulación.
         
         Args:
-            final_prices: Array of final prices from all simulations
-            initial_price: Starting price
-            price_paths: All price paths
+            final_prices: Array con los precios finales de todas las simulaciones
+            initial_price: Precio inicial
+            price_paths: Todas las trayectorias simuladas
             
         Returns:
-            Dictionary with statistics
+            Diccionario con estadísticas
         """
         # Basic statistics
         mean_price = np.mean(final_prices)
@@ -180,21 +180,21 @@ class MonteCarloSimulation:
             95: np.percentile(final_prices, 95)
         }
         
-        # Probability of profit (price above initial)
+        # Probabilidad de ganancia (precio por encima del inicial)
         prob_profit = np.mean(final_prices > initial_price) * 100
         
-        # Value at Risk (VaR)
+        # Valor en Riesgo (VaR)
         var_95 = initial_price - percentiles[5]  # 95% VaR
         var_99 = initial_price - np.percentile(final_prices, 1)  # 99% VaR
         
-        # Expected Shortfall (CVaR)
+        # Pérdida esperada (CVaR)
         cvar_95 = initial_price - np.mean(final_prices[final_prices < percentiles[5]])
         
-        # Returns statistics
+        # Estadísticas de retornos
         returns = (final_prices - initial_price) / initial_price * 100
         expected_return = np.mean(returns)
         
-        # Max and min prices across all paths
+        # Precio máximo y mínimo en todas las trayectorias
         max_price_overall = np.max(price_paths)
         min_price_overall = np.min(price_paths)
         
@@ -260,25 +260,25 @@ class MonteCarloSimulation:
             DataFrame with summary statistics
         """
         summary_data = {
-            "Metric": [
-                "Initial Price",
-                "Mean Final Price",
-                "Median Final Price",
-                "Std Dev of Final Price",
-                "5th Percentile",
-                "25th Percentile", 
-                "75th Percentile",
-                "95th Percentile",
-                "Probability of Profit (%)",
-                "Expected Return (%)",
+            "Métrica": [
+                "Precio inicial",
+                "Precio medio final",
+                "Precio mediano final",
+                "Desv. estándar (final)",
+                "Percentil 5",
+                "Percentil 25", 
+                "Percentil 75",
+                "Percentil 95",
+                "Probabilidad de ganancia (%)",
+                "Retorno esperado (%)",
                 "VaR (95%)",
                 "CVaR (95%)",
-                "Daily Volatility",
-                "Annual Volatility",
-                "Number of Simulations",
-                "Forecast Days"
+                "Volatilidad diaria",
+                "Volatilidad anual",
+                "Número de simulaciones",
+                "Días de pronóstico"
             ],
-            "Value": [
+            "Valor": [
                 f"${results['initial_price']:.2f}",
                 f"${results['mean_final_price']:.2f}",
                 f"${results['median_final_price']:.2f}",

@@ -1,9 +1,9 @@
 """
-Ally Financial Valuation Dashboard
+Panel de Valoración de Ally Financial
 ===================================
-Interactive Streamlit dashboard for stock valuation analysis.
+Panel interactivo en Streamlit para el análisis de valoración de acciones.
 
-Run with: streamlit run streamlit_app.py
+Ejecutar con: streamlit run streamlit_app.py
 """
 
 import streamlit as st
@@ -23,9 +23,9 @@ from src.data_loader import DataLoader
 from src.valuation import ValuationEngine
 from src.monte_carlo import MonteCarloSimulation
 
-# Page configuration
+# Configuración de la página
 st.set_page_config(
-    page_title="ALLY Valuation Dashboard",
+    page_title="Panel de Valoración ALLY",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -63,39 +63,44 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown('<h1 class="main-header">📊 Ally Financial (ALLY) Valuation Dashboard</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">📊 Panel de Valoración de Ally Financial (ALLY)</h1>', unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.header("⚙️ Configuration")
+st.sidebar.header("⚙️ Configuración")
 
-# Ticker selection (for extensibility)
-ticker = st.sidebar.text_input("Stock Ticker", value="ALLY", max_chars=5)
+# Selección de ticker (extensible)
+ticker = st.sidebar.text_input("Ticker", value="ALLY", max_chars=5)
 
 # Valuation parameters
-st.sidebar.subheader("📊 Valuation Parameters")
-required_return = st.sidebar.slider("Required Return (WACC)", 0.05, 0.20, 0.10, 0.01, format="%.2f")
-growth_rate = st.sidebar.slider("Growth Rate (Stage 1)", 0.01, 0.15, 0.05, 0.01, format="%.2f")
-terminal_growth = st.sidebar.slider("Terminal Growth Rate", 0.01, 0.05, 0.02, 0.005, format="%.3f")
-forecast_years = st.sidebar.slider("Forecast Years", 3, 10, 5)
+st.sidebar.subheader("📊 Parámetros de Valoración")
+required_return = st.sidebar.slider("Rentabilidad requerida (WACC)", 0.05, 0.20, 0.10, 0.01, format="%.2f")
+growth_rate = st.sidebar.slider("Tasa de crecimiento (Etapa 1)", 0.01, 0.15, 0.05, 0.01, format="%.2f")
+terminal_growth = st.sidebar.slider("Tasa de crecimiento terminal", 0.01, 0.05, 0.02, 0.005, format="%.3f")
+forecast_years = st.sidebar.slider("Años de pronóstico", 3, 10, 5)
 
 # Monte Carlo parameters
-st.sidebar.subheader("🎲 Monte Carlo Settings")
-n_simulations = st.sidebar.selectbox("Number of Simulations", [1000, 5000, 10000, 50000], index=2)
-mc_days = st.sidebar.selectbox("Forecast Days", [63, 126, 252, 504], index=2, 
-                                format_func=lambda x: f"{x} days ({x//252} year{'s' if x//252 > 1 else ''})" if x >= 252 else f"{x} days ({x//21} months)")
+st.sidebar.subheader("🎲 Parámetros Monte Carlo")
+n_simulations = st.sidebar.selectbox("Número de simulaciones", [1000, 5000, 10000, 50000], index=2)
+mc_days = st.sidebar.selectbox("Días de pronóstico", [63, 126, 252, 504], index=2, 
+                                format_func=lambda x: f"{x} días ({x//252} año{'s' if x//252 > 1 else ''})" if x >= 252 else f"{x} días ({x//21} meses)")
 
 # Initialize data with caching
 @st.cache_data(ttl=3600)
 def load_data(ticker_symbol):
-    """Load and cache financial data."""
+    """Cargar y cachear datos financieros.
+
+    Nota: No devolvemos el objeto `DataLoader` porque no es serializable por
+    `st.cache_data`. Sólo devolvemos estructuras serializables (DataFrame/dict).
+    Si necesitas cachear recursos no serializables, usa `st.cache_resource`.
+    """
     loader = DataLoader(ticker=ticker_symbol)
     prices = loader.get_historical_prices(period="5y")
     summary = loader.get_summary()
-    return loader, prices, summary
+    return prices, summary
 
 @st.cache_data(ttl=3600)
 def run_valuations(ticker_symbol, req_return, growth, term_growth, years):
-    """Run and cache valuation calculations."""
+    """Ejecutar y cachear los cálculos de valoración."""
     loader = DataLoader(ticker=ticker_symbol)
     valuation = ValuationEngine(data_loader=loader)
     
@@ -132,40 +137,40 @@ def run_valuations(ticker_symbol, req_return, growth, term_growth, years):
 
 @st.cache_data(ttl=3600)
 def run_monte_carlo(prices_data, n_sims, days):
-    """Run and cache Monte Carlo simulation."""
+    """Ejecutar y cachear la simulación Monte Carlo."""
     mc = MonteCarloSimulation(n_simulations=n_sims, n_days=days, random_seed=42)
     return mc.run_simulation(prices_data)
 
 # Load data
 try:
-    with st.spinner("Loading financial data..."):
-        loader, prices, summary = load_data(ticker)
+    with st.spinner("Cargando datos financieros..."):
+        prices, summary = load_data(ticker)
     
-    # Main content
-    # Row 1: Key Metrics
-    st.header("📈 Key Financial Metrics")
+    # Contenido principal
+    # Fila 1: Métricas clave
+    st.header("📈 Métricas Financieras Clave")
     
     col1, col2, col3, col4, col5 = st.columns(5)
     
     current_price = summary.get('current_price', 0)
     
     with col1:
-        st.metric("Current Price", f"${current_price:.2f}")
+        st.metric("Precio Actual", f"${current_price:.2f}")
     with col2:
         market_cap = summary.get('market_cap', 0)
-        st.metric("Market Cap", f"${market_cap/1e9:.2f}B")
+        st.metric("Capitalización", f"${market_cap/1e9:.2f}B")
     with col3:
         eps = summary.get('eps', 0)
         st.metric("EPS", f"${eps:.2f}")
     with col4:
         div_yield = summary.get('dividend_yield', 0) * 100
-        st.metric("Dividend Yield", f"{div_yield:.2f}%")
+        st.metric("Rendimiento por dividendo", f"{div_yield:.2f}%")
     with col5:
         book_val = summary.get('book_value_per_share', 0)
-        st.metric("Book Value/Share", f"${book_val:.2f}")
+        st.metric("Valor contable/acción", f"${book_val:.2f}")
     
-    # Row 2: Price Chart
-    st.header("📊 Historical Price Data")
+    # Fila 2: Gráfico de precio
+    st.header("📊 Datos Históricos de Precio")
     
     # Create interactive price chart
     fig_price = make_subplots(
@@ -197,136 +202,136 @@ try:
         height=600,
         showlegend=False,
         xaxis_rangeslider_visible=False,
-        title_text=f"{ticker} - 5 Year Price History"
+        title_text=f"{ticker} - Historial de precios (5 años)"
     )
     
     st.plotly_chart(fig_price, use_container_width=True)
     
     # Run valuations
-    st.header("💰 Valuation Analysis")
+    st.header("💰 Análisis de Valoración")
     
-    with st.spinner("Running valuation models..."):
+    with st.spinner("Ejecutando modelos de valoración..."):
         valuations = run_valuations(ticker, required_return, growth_rate, terminal_growth, forecast_years)
     
     # Create tabs for different valuation methods
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "📗 Book Value", "📘 Adjusted Book", "📈 P/E Ratio", 
-        "💵 DDM", "🏢 Comparables", "💎 DCF/FCF"
+        "📗 Valor Contable", "📘 Valor Contable Ajustado", "📈 Relación P/E", 
+        "💵 DDM", "🏢 Empresas Comparables", "💎 DCF/FCF"
     ])
     
     with tab1:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Book Value Analysis")
+            st.subheader("Análisis: Valor Contable")
             bv = valuations['book_value']
-            st.metric("Intrinsic Value", f"${bv['intrinsic_value']:.2f}")
-            st.metric("Price to Book", f"{bv['price_to_book']:.2f}x")
-            st.metric("Upside Potential", f"{bv['upside_potential']:.2f}%", 
+            st.metric("Valor Intrínseco", f"${bv['intrinsic_value']:.2f}")
+            st.metric("Precio / Valor Contable", f"{bv['price_to_book']:.2f}x")
+            st.metric("Potencial Alza", f"{bv['upside_potential']:.2f}%", 
                      delta=f"{bv['upside_potential']:.1f}%")
         with col2:
-            st.write("**Method Description:**")
-            st.write("Book Value = Total Equity / Shares Outstanding")
-            st.write(f"- Total Equity: ${bv.get('total_equity', 0):,.0f}")
-            st.write(f"- Shares Outstanding: {bv.get('shares_outstanding', 0):,.0f}")
+            st.write("**Descripción del método:**")
+            st.write("Valor Contable = Patrimonio Total / Acciones en Circulación")
+            st.write(f"- Patrimonio Total: ${bv.get('total_equity', 0):,.0f}")
+            st.write(f"- Acciones en Circulación: {bv.get('shares_outstanding', 0):,.0f}")
     
     with tab2:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Adjusted Book Value Analysis")
+            st.subheader("Análisis: Valor Contable Ajustado")
             abv = valuations['adj_book']
-            st.metric("Intrinsic Value", f"${abv['intrinsic_value']:.2f}")
-            st.metric("Price to Adj. Book", f"{abv['price_to_adjusted_book']:.2f}x")
-            st.metric("Upside Potential", f"{abv['upside_potential']:.2f}%",
+            st.metric("Valor Intrínseco", f"${abv['intrinsic_value']:.2f}")
+            st.metric("Precio / Valor Ajustado", f"{abv['price_to_adjusted_book']:.2f}x")
+            st.metric("Potencial Alza", f"{abv['upside_potential']:.2f}%",
                      delta=f"{abv['upside_potential']:.1f}%")
         with col2:
-            st.write("**Method Description:**")
-            st.write("Adjusted Book = (Total Equity - Intangibles) / Shares")
-            st.write(f"- Total Equity: ${abv.get('total_equity', 0):,.0f}")
-            st.write(f"- Intangible Assets: ${abv.get('intangible_assets', 0):,.0f}")
-            st.write(f"- Adjusted Equity: ${abv.get('adjusted_equity', 0):,.0f}")
+            st.write("**Descripción del método:**")
+            st.write("Valor Contable Ajustado = (Patrimonio Total - Intangibles) / Acciones")
+            st.write(f"- Patrimonio Total: ${abv.get('total_equity', 0):,.0f}")
+            st.write(f"- Activos intangibles: ${abv.get('intangible_assets', 0):,.0f}")
+            st.write(f"- Patrimonio ajustado: ${abv.get('adjusted_equity', 0):,.0f}")
     
     with tab3:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("P/E Ratio Analysis")
+            st.subheader("Análisis: Relación P/E")
             pe = valuations['pe_val']
-            st.metric("Intrinsic Value", f"${pe['intrinsic_value']:.2f}")
-            st.metric("Current P/E", f"{pe['current_pe']:.2f}x")
-            st.metric("Target P/E (Industry)", f"{pe['target_pe']:.2f}x")
-            st.metric("Upside Potential", f"{pe['upside_potential']:.2f}%",
+            st.metric("Valor Intrínseco", f"${pe['intrinsic_value']:.2f}")
+            st.metric("P/E Actual", f"{pe['current_pe']:.2f}x")
+            st.metric("P/E Objetivo (Sector)", f"{pe['target_pe']:.2f}x")
+            st.metric("Potencial Alza", f"{pe['upside_potential']:.2f}%",
                      delta=f"{pe['upside_potential']:.1f}%")
         with col2:
-            st.write("**Method Description:**")
-            st.write("Intrinsic Value = EPS × Target P/E")
+            st.write("**Descripción del método:**")
+            st.write("Valor Intrínseco = EPS × P/E Objetivo")
             st.write(f"- EPS: ${pe.get('eps', 0):.2f}")
-            st.write(f"- Target P/E: {pe.get('target_pe', 0):.2f}x (Industry Median)")
+            st.write(f"- P/E objetivo: {pe.get('target_pe', 0):.2f}x (mediana sectorial)")
     
     with tab4:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Dividend Discount Model")
+            st.subheader("Modelo de Descuento de Dividendos (DDM)")
             ddm = valuations['ddm']
             if ddm.get('error'):
                 st.warning(ddm['error'])
             else:
-                st.metric("Intrinsic Value", f"${ddm['intrinsic_value']:.2f}")
-                st.metric("Dividend/Share", f"${ddm['dividend_per_share']:.2f}")
-                st.metric("Upside Potential", f"{ddm['upside_potential']:.2f}%",
+                st.metric("Valor Intrínseco", f"${ddm['intrinsic_value']:.2f}")
+                st.metric("Dividendo/Acción", f"${ddm['dividend_per_share']:.2f}")
+                st.metric("Potencial Alza", f"{ddm['upside_potential']:.2f}%",
                          delta=f"{ddm['upside_potential']:.1f}%")
         with col2:
-            st.write("**Model Parameters:**")
-            st.write(f"- Required Return: {ddm.get('required_return', 0)*100:.1f}%")
-            st.write(f"- Growth Rate (Stage 1): {ddm.get('growth_rate_stage1', 0)*100:.1f}%")
-            st.write(f"- Terminal Growth: {ddm.get('terminal_growth_rate', 0)*100:.1f}%")
-            st.write(f"- Forecast Years: {ddm.get('forecast_years', 0)}")
+            st.write("**Parámetros del modelo:**")
+            st.write(f"- Rentabilidad requerida: {ddm.get('required_return', 0)*100:.1f}%")
+            st.write(f"- Tasa de crecimiento (Etapa 1): {ddm.get('growth_rate_stage1', 0)*100:.1f}%")
+            st.write(f"- Crecimiento terminal: {ddm.get('terminal_growth_rate', 0)*100:.1f}%")
+            st.write(f"- Años de pronóstico: {ddm.get('forecast_years', 0)}")
             
             if ddm.get('projected_dividends'):
-                st.write("**Projected Dividends:**")
+                st.write("**Dividendos proyectados:**")
                 div_df = pd.DataFrame(ddm['projected_dividends'])
                 st.dataframe(div_df.round(2))
     
     with tab5:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Comparable Companies")
+            st.subheader("Empresas Comparables")
             comp = valuations['comparables']
             if comp.get('error'):
                 st.warning(comp['error'])
             else:
-                st.metric("Intrinsic Value", f"${comp['intrinsic_value']:.2f}")
-                st.metric("Implied Value (P/E)", f"${comp.get('implied_value_pe', 0):.2f}")
-                st.metric("Implied Value (P/B)", f"${comp.get('implied_value_pb', 0):.2f}")
-                st.metric("Upside Potential", f"{comp['upside_potential']:.2f}%",
+                st.metric("Valor Intrínseco", f"${comp['intrinsic_value']:.2f}")
+                st.metric("Valor implícito (P/E)", f"${comp.get('implied_value_pe', 0):.2f}")
+                st.metric("Valor implícito (P/B)", f"${comp.get('implied_value_pb', 0):.2f}")
+                st.metric("Potencial Alza", f"{comp['upside_potential']:.2f}%",
                          delta=f"{comp['upside_potential']:.1f}%")
         with col2:
-            st.write("**Peer Company Metrics:**")
+            st.write("**Métricas de empresas pares:**")
             if comp.get('peer_metrics'):
                 peer_df = pd.DataFrame(comp['peer_metrics'])
                 st.dataframe(peer_df)
-                st.write(f"Median P/E: {comp.get('median_pe', 'N/A')}")
-                st.write(f"Median P/B: {comp.get('median_pb', 'N/A')}")
+                st.write(f"Mediana P/E: {comp.get('median_pe', 'N/A')}")
+                st.write(f"Mediana P/B: {comp.get('median_pb', 'N/A')}")
     
     with tab6:
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("DCF (Free Cash Flow)")
+            st.subheader("DCF (Flujo de Caja Libre)")
             dcf = valuations['dcf']
             if dcf.get('error'):
                 st.warning(dcf['error'])
             else:
-                st.metric("Intrinsic Value", f"${dcf['intrinsic_value']:.2f}")
-                st.metric("Free Cash Flow", f"${dcf['free_cash_flow']:,.0f}")
-                st.metric("Enterprise Value", f"${dcf['enterprise_value']:,.0f}")
-                st.metric("Upside Potential", f"{dcf['upside_potential']:.2f}%",
+                st.metric("Valor Intrínseco", f"${dcf['intrinsic_value']:.2f}")
+                st.metric("Flujo de Caja Libre", f"${dcf['free_cash_flow']:,.0f}")
+                st.metric("Valor Empresa", f"${dcf['enterprise_value']:,.0f}")
+                st.metric("Potencial Alza", f"{dcf['upside_potential']:.2f}%",
                          delta=f"{dcf['upside_potential']:.1f}%")
         with col2:
-            st.write("**Model Parameters:**")
+            st.write("**Parámetros del modelo:**")
             st.write(f"- WACC: {dcf.get('wacc', 0)*100:.1f}%")
-            st.write(f"- Growth Rate: {dcf.get('growth_rate', 0)*100:.1f}%")
-            st.write(f"- Terminal Growth: {dcf.get('terminal_growth_rate', 0)*100:.1f}%")
+            st.write(f"- Tasa de crecimiento: {dcf.get('growth_rate', 0)*100:.1f}%")
+            st.write(f"- Crecimiento terminal: {dcf.get('terminal_growth_rate', 0)*100:.1f}%")
             
             if dcf.get('projected_fcfs'):
-                st.write("**Projected Free Cash Flows:**")
+                st.write("**Flujos de caja proyectados:**")
                 fcf_df = pd.DataFrame(dcf['projected_fcfs'])
                 fcf_df['fcf'] = fcf_df['fcf'].apply(lambda x: f"${x:,.0f}")
                 fcf_df['pv'] = fcf_df['pv'].apply(lambda x: f"${x:,.0f}")
@@ -349,14 +354,14 @@ try:
         marker_color=colors,
         text=[f"${v:.2f}" for v in valid_vals['Intrinsic Value ($)']],
         textposition='outside',
-        name='Intrinsic Value'
+        name='Valor Intrínseco'
     ))
     
     fig_comparison.add_hline(
         y=current_price, 
         line_dash="dash", 
         line_color="blue",
-        annotation_text=f"Current Price: ${current_price:.2f}",
+        annotation_text=f"Precio actual: ${current_price:.2f}",
         annotation_position="top right"
     )
     
@@ -365,14 +370,14 @@ try:
         y=fair_val, 
         line_dash="dot", 
         line_color="purple",
-        annotation_text=f"Fair Value Est.: ${fair_val:.2f}",
+        annotation_text=f"Estimación Valor Justo: ${fair_val:.2f}",
         annotation_position="bottom right"
     )
     
     fig_comparison.update_layout(
-        title="Intrinsic Value by Valuation Method",
-        xaxis_title="Valuation Method",
-        yaxis_title="Price ($)",
+        title="Valor Intrínseco por Método de Valoración",
+        xaxis_title="Método de Valoración",
+        yaxis_title="Precio ($)",
         height=500
     )
     
@@ -385,9 +390,9 @@ try:
     upside = fair_value_data['upside_potential']
     
     with col1:
-        st.metric("📊 Weighted Fair Value", f"${fair_value_data['fair_value_estimate']:.2f}")
+        st.metric("📊 Valor Justo Ponderado", f"${fair_value_data['fair_value_estimate']:.2f}")
     with col2:
-        st.metric("💵 Current Price", f"${fair_value_data['current_price']:.2f}")
+        st.metric("💵 Precio actual", f"${fair_value_data['current_price']:.2f}")
     with col3:
         delta_color = "normal" if upside > 0 else "inverse"
         st.metric("📈 Upside Potential", f"{upside:.2f}%", delta=f"{upside:.1f}%", delta_color=delta_color)
@@ -438,9 +443,9 @@ try:
         ))
         
         fig_paths.update_layout(
-            title=f"Monte Carlo Price Paths ({n_simulations:,} simulations)",
-            xaxis_title="Trading Days",
-            yaxis_title="Price ($)",
+            title=f"Trayectorias Monte Carlo ({n_simulations:,} simulaciones)",
+            xaxis_title="Días de negociación",
+            yaxis_title="Precio ($)",
             height=400
         )
         
@@ -458,14 +463,14 @@ try:
         ))
         
         fig_dist.add_vline(x=mc_results['initial_price'], line_dash="dash", line_color="green",
-                          annotation_text=f"Initial: ${mc_results['initial_price']:.2f}")
+                  annotation_text=f"Inicial: ${mc_results['initial_price']:.2f}")
         fig_dist.add_vline(x=mc_results['mean_final_price'], line_dash="solid", line_color="red",
-                          annotation_text=f"Mean: ${mc_results['mean_final_price']:.2f}")
+                  annotation_text=f"Media: ${mc_results['mean_final_price']:.2f}")
         
         fig_dist.update_layout(
-            title="Distribution of Final Prices",
-            xaxis_title="Price ($)",
-            yaxis_title="Frequency",
+            title="Distribución de Precios Finales",
+            xaxis_title="Precio ($)",
+            yaxis_title="Frecuencia",
             height=400
         )
         
@@ -475,12 +480,12 @@ try:
     st.subheader("📊 Monte Carlo Statistics")
     
     mc_stats = {
-        "Metric": [
-            "Initial Price", "Mean Final Price", "Median Final Price", "Std Dev",
-            "5th Percentile", "25th Percentile", "75th Percentile", "95th Percentile",
-            "VaR (95%)", "CVaR (95%)", "Annual Volatility"
+        "Métrica": [
+            "Precio inicial", "Precio medio final", "Precio mediano final", "Desv. estándar",
+            "Percentil 5", "Percentil 25", "Percentil 75", "Percentil 95",
+            "VaR (95%)", "CVaR (95%)", "Volatilidad anual"
         ],
-        "Value": [
+        "Valor": [
             f"${mc_results['initial_price']:.2f}",
             f"${mc_results['mean_final_price']:.2f}",
             f"${mc_results['median_final_price']:.2f}",
@@ -497,16 +502,16 @@ try:
     
     st.dataframe(pd.DataFrame(mc_stats), use_container_width=True)
     
-    # LSTM Section (Optional)
-    st.header("🤖 LSTM Price Prediction (Optional)")
+    # Sección LSTM (Opcional)
+    st.header("🤖 Predicción con LSTM")
     
-    run_lstm = st.checkbox("Run LSTM Model (may take a few minutes)")
+    run_lstm = st.checkbox("Ejecutar modelo LSTM (puede tardar varios minutos)")
     
     if run_lstm:
         try:
             from src.lstm_model import LSTMPredictor
             
-            with st.spinner("Training LSTM model... This may take a few minutes."):
+            with st.spinner("Entrenando modelo LSTM... Esto puede tardar varios minutos."):
                 lstm = LSTMPredictor(
                     sequence_length=60,
                     units=50,
@@ -523,9 +528,9 @@ try:
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.metric("Training RMSE", f"${training_results['train_rmse']:.2f}")
+                st.metric("RMSE entrenamiento", f"${training_results['train_rmse']:.2f}")
             with col2:
-                st.metric("Test RMSE", f"${training_results['test_rmse']:.2f}")
+                st.metric("RMSE prueba", f"${training_results['test_rmse']:.2f}")
             with col3:
                 predicted_change = ((future_predictions[-1] - close_prices.iloc[-1]) / close_prices.iloc[-1] * 100)
                 st.metric(f"Predicted Price ({days_ahead}d)", f"${future_predictions[-1]:.2f}",
@@ -556,63 +561,58 @@ try:
             ))
             
             fig_lstm.update_layout(
-                title=f"LSTM {days_ahead}-Day Price Forecast",
-                xaxis_title="Date",
-                yaxis_title="Price ($)",
+                title=f"Pronóstico LSTM a {days_ahead} días",
+                xaxis_title="Fecha",
+                yaxis_title="Precio ($)",
                 height=400
             )
             
             st.plotly_chart(fig_lstm, use_container_width=True)
             
         except ImportError:
-            st.warning("TensorFlow is required for LSTM predictions. Install with: pip install tensorflow")
+            st.warning("TensorFlow es necesario para LSTM. Instálalo con: pip install tensorflow")
         except Exception as e:
             st.error(f"Error running LSTM model: {str(e)}")
     
-    # Final Recommendation
-    st.header("📋 Investment Recommendation")
+    # Recomendación final
+    st.header("📋 Recomendación de inversión")
     
     upside = fair_value_data['upside_potential']
     
     if upside > 20:
-        recommendation = "STRONG BUY"
+        recommendation = "COMPRA FIRME"
         rec_color = "recommendation-buy"
-        description = "The stock appears significantly undervalued based on multiple valuation methods."
+        description = "La acción parece significativamente infravalorada según múltiples métodos."
     elif upside > 10:
-        recommendation = "BUY"
+        recommendation = "COMPRAR"
         rec_color = "recommendation-buy"
-        description = "The stock appears moderately undervalued and may offer attractive returns."
+        description = "La acción parece moderadamente infravalorada y puede ofrecer retornos atractivos."
     elif upside > -10:
-        recommendation = "HOLD"
+        recommendation = "MANTENER"
         rec_color = "recommendation-hold"
-        description = "The stock appears fairly valued at current levels."
+        description = "La acción parece razonablemente valorada en los niveles actuales."
     elif upside > -20:
-        recommendation = "SELL"
+        recommendation = "VENDER"
         rec_color = "recommendation-sell"
-        description = "The stock appears moderately overvalued at current prices."
+        description = "La acción parece moderadamente sobrevalorada en los precios actuales."
     else:
-        recommendation = "STRONG SELL"
+        recommendation = "VENTA FUERTE"
         rec_color = "recommendation-sell"
-        description = "The stock appears significantly overvalued based on multiple valuation methods."
+        description = "La acción parece significativamente sobrevalorada según múltiples métodos."
     
     st.markdown(f"""
     <div class="metric-card">
         <h2 class="{rec_color}">{recommendation}</h2>
         <p>{description}</p>
         <ul>
-            <li>Current Price: ${current_price:.2f}</li>
+            <li>Precio actual: ${current_price:.2f}</li>
             <li>Fair Value Estimate: ${fair_value_data['fair_value_estimate']:.2f}</li>
             <li>Upside/Downside Potential: {upside:.2f}%</li>
-            <li>Monte Carlo Probability of Profit (1Y): {mc_results['prob_profit']:.1f}%</li>
+            <li>Probabilidad de Ganancia (Monte Carlo, 1 año): {mc_results['prob_profit']:.1f}%</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
     
-    st.warning("""
-    ⚠️ **Disclaimer**: This analysis is for educational purposes only and should not be considered 
-    as financial advice. Always conduct your own research and consult with a qualified financial 
-    advisor before making investment decisions. Past performance does not guarantee future results.
-    """)
 
 except Exception as e:
     st.error(f"Error loading data: {str(e)}")
@@ -622,6 +622,6 @@ except Exception as e:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: gray;'>
-    <p>Built with Streamlit | Data from Yahoo Finance | © 2024</p>
+    <p>Desarrollado con Streamlit | Datos de Yahoo Finance | © 2025 | Grupo 8 </p>
 </div>
 """, unsafe_allow_html=True)

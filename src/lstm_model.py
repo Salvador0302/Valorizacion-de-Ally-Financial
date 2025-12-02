@@ -1,7 +1,7 @@
 """
-LSTM Model for Price Prediction
-================================
-Uses LSTM neural network to predict future stock prices.
+Modelo LSTM para Predicción de Precios
+=====================================
+Utiliza una red LSTM para predecir precios futuros de acciones.
 """
 
 import numpy as np
@@ -12,7 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 class LSTMPredictor:
     """
-    LSTM-based stock price predictor.
+    Predictor de precios basado en LSTM.
     """
     
     def __init__(
@@ -23,13 +23,13 @@ class LSTMPredictor:
         batch_size: int = 32
     ):
         """
-        Initialize the LSTM predictor.
+        Inicializar el predictor LSTM.
         
         Args:
-            sequence_length: Number of time steps for input sequence
-            units: Number of LSTM units
-            epochs: Training epochs
-            batch_size: Training batch size
+            sequence_length: Número de pasos temporales para la secuencia de entrada
+            units: Número de unidades LSTM
+            epochs: Épocas de entrenamiento
+            batch_size: Tamaño de lote para entrenamiento
         """
         self.sequence_length = sequence_length
         self.units = units
@@ -41,10 +41,10 @@ class LSTMPredictor:
     
     def _build_model(self, input_shape: Tuple[int, int]) -> None:
         """
-        Build the LSTM model architecture.
+        Construir la arquitectura del modelo LSTM.
         
         Args:
-            input_shape: Shape of input data (sequence_length, features)
+            input_shape: Forma de los datos de entrada (sequence_length, features)
         """
         try:
             from tensorflow.keras.models import Sequential
@@ -61,20 +61,20 @@ class LSTMPredictor:
             
             self.model.compile(optimizer='adam', loss='mean_squared_error')
         except ImportError:
-            raise ImportError("TensorFlow is required for LSTM predictions. Install with: pip install tensorflow")
+            raise ImportError("TensorFlow es necesario para las predicciones LSTM. Instálalo con: pip install tensorflow")
     
     def _create_sequences(
         self, 
         data: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Create sequences for LSTM training.
+        Crear secuencias para el entrenamiento LSTM.
         
         Args:
-            data: Scaled price data
+            data: Datos de precios escalados
             
         Returns:
-            Tuple of (X, y) arrays for training
+            Tupla (X, y) para entrenamiento
         """
         X, y = [], []
         
@@ -90,14 +90,14 @@ class LSTMPredictor:
         train_ratio: float = 0.8
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
-        Prepare data for training and testing.
+        Preparar datos para entrenamiento y prueba.
         
         Args:
-            prices: Series of historical prices
-            train_ratio: Ratio of data to use for training
+            prices: Serie de precios históricos
+            train_ratio: Porcentaje de datos para entrenamiento
             
         Returns:
-            Tuple of (X_train, y_train, X_test, y_test)
+            Tupla (X_train, y_train, X_test, y_test)
         """
         # Convert to numpy array and reshape
         data = prices.values.reshape(-1, 1)
@@ -127,15 +127,15 @@ class LSTMPredictor:
         verbose: int = 0
     ) -> dict:
         """
-        Train the LSTM model on historical prices.
+        Entrenar el modelo LSTM con precios históricos.
         
         Args:
-            prices: Series of historical prices
-            train_ratio: Ratio of data to use for training
-            verbose: Verbosity level for training
+            prices: Serie de precios históricos
+            train_ratio: Porcentaje de datos para entrenamiento
+            verbose: Nivel de verbosidad durante el entrenamiento
             
         Returns:
-            Dictionary with training history
+            Diccionario con el historial de entrenamiento
         """
         # Prepare data
         X_train, y_train, X_test, y_test = self.prepare_data(prices, train_ratio)
@@ -184,17 +184,17 @@ class LSTMPredictor:
         days_ahead: int = 30
     ) -> np.ndarray:
         """
-        Predict future prices.
+        Predecir precios futuros.
         
         Args:
-            prices: Series of historical prices
-            days_ahead: Number of days to predict
+            prices: Serie de precios históricos
+            days_ahead: Número de días a predecir
             
         Returns:
-            Array of predicted prices
+            Array con los precios predichos
         """
         if not self.is_trained:
-            raise ValueError("Model must be trained before making predictions")
+            raise ValueError("El modelo debe estar entrenado antes de realizar predicciones")
         
         # Get the last sequence
         data = prices.values.reshape(-1, 1)
@@ -230,14 +230,14 @@ class LSTMPredictor:
         days_ahead: int = 30
     ) -> pd.DatetimeIndex:
         """
-        Generate future dates for predictions.
+        Generar fechas futuras para las predicciones.
         
         Args:
-            last_date: Last date in historical data
-            days_ahead: Number of days to predict
+            last_date: Última fecha en los datos históricos
+            days_ahead: Número de días a predecir
             
         Returns:
-            DatetimeIndex of future dates
+            DatetimeIndex con fechas futuras
         """
         return pd.date_range(start=last_date + pd.Timedelta(days=1), periods=days_ahead, freq='B')
     
@@ -246,16 +246,16 @@ class LSTMPredictor:
         prices: pd.Series
     ) -> dict:
         """
-        Evaluate model performance with cross-validation style metrics.
+        Evaluar el rendimiento del modelo con métricas tipo cross-validation.
         
         Args:
-            prices: Series of historical prices
+            prices: Serie de precios históricos
             
         Returns:
-            Dictionary with evaluation metrics
+            Diccionario con métricas de evaluación
         """
         if not self.is_trained:
-            raise ValueError("Model must be trained before evaluation")
+            raise ValueError("El modelo debe estar entrenado antes de la evaluación")
         
         # Prepare test data
         data = prices.values.reshape(-1, 1)

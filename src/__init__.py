@@ -1,7 +1,7 @@
 """
-Ally Financial Valuation Module
-================================
-This module provides various valuation methods for Ally Financial (ALLY) stock.
+Módulo de Valoración de Ally Financial
+=====================================
+Este módulo proporciona varios métodos de valoración para la acción Ally Financial (ALLY).
 """
 
 from .data_loader import DataLoader

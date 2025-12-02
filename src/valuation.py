@@ -1,13 +1,13 @@
 """
-Valuation Engine Module
-=======================
-Implements multiple stock valuation methods:
-- Book Value
-- Adjusted Book Value
-- P/E Ratio
-- Dividend Discount Model (DDM)
-- Comparable Companies Analysis
-- DCF (Free Cash Flow)
+Módulo del Motor de Valoración
+==============================
+Implementa múltiples métodos de valoración de acciones:
+- Valor Contable
+- Valor Contable Ajustado
+- Relación P/E
+- Modelo de Descuento de Dividendos (DDM)
+- Análisis de Empresas Comparables
+- DCF (Flujo de Caja Libre)
 """
 
 import numpy as np
@@ -18,7 +18,7 @@ from .data_loader import DataLoader
 
 class ValuationEngine:
     """
-    Comprehensive stock valuation engine supporting multiple methods.
+    Motor de valoración integral que soporta múltiples métodos.
     """
     
     def __init__(self, data_loader: Optional[DataLoader] = None, ticker: str = "ALLY"):
@@ -34,12 +34,12 @@ class ValuationEngine:
     
     def book_value_valuation(self) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using Book Value method.
+        Calcular el valor intrínseco usando el método de Valor Contable.
         
-        Book Value = Total Equity / Shares Outstanding
+        Valor Contable = Patrimonio Total / Acciones en Circulación
         
         Returns:
-            Dictionary with book value analysis
+            Diccionario con el análisis de valor contable
         """
         total_equity = self.data_loader.get_total_equity()
         shares_outstanding = self.data_loader.get_shares_outstanding()
@@ -56,7 +56,7 @@ class ValuationEngine:
         price_to_book = current_price / final_bvps if final_bvps > 0 else 0
         
         return {
-            "method": "Book Value",
+            "method": "Valor Contable",
             "intrinsic_value": final_bvps,
             "current_price": current_price,
             "total_equity": total_equity,
@@ -67,14 +67,14 @@ class ValuationEngine:
     
     def adjusted_book_value_valuation(self) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using Adjusted Book Value method.
+        Calcular el valor intrínseco usando el método de Valor Contable Ajustado.
         
-        Adjusted Book Value = (Total Equity - Intangible Assets) / Shares Outstanding
+        Valor Contable Ajustado = (Patrimonio Total - Activos Intangibles) / Acciones
         
-        This provides a more conservative estimate by excluding intangible assets.
+        Provee una estimación más conservadora al excluir intangibles.
         
         Returns:
-            Dictionary with adjusted book value analysis
+            Diccionario con el análisis de valor contable ajustado
         """
         total_equity = self.data_loader.get_total_equity()
         intangible_assets = self.data_loader.get_intangible_assets()
@@ -87,7 +87,7 @@ class ValuationEngine:
         price_to_adj_book = current_price / adjusted_bvps if adjusted_bvps > 0 else 0
         
         return {
-            "method": "Adjusted Book Value",
+            "method": "Valor Contable Ajustado",
             "intrinsic_value": adjusted_bvps,
             "current_price": current_price,
             "total_equity": total_equity,
@@ -104,16 +104,16 @@ class ValuationEngine:
         use_industry_average: bool = True
     ) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using P/E Ratio method.
+        Calcular el valor intrínseco usando la Relación P/E.
         
-        Intrinsic Value = EPS * Target P/E
+        Valor Intrínseco = EPS * P/E objetivo
         
         Args:
-            target_pe: Target P/E ratio (if None, uses industry average or historical)
-            use_industry_average: Whether to use industry average P/E
+            target_pe: P/E objetivo (si None, usa mediana sectorial o histórico)
+            use_industry_average: Usar promedio sectorial
             
         Returns:
-            Dictionary with P/E analysis
+            Diccionario con el análisis P/E
         """
         eps = self.data_loader.get_earnings_per_share()
         current_price = self.data_loader.get_current_price()
@@ -135,7 +135,7 @@ class ValuationEngine:
         intrinsic_value = eps * target_pe if eps > 0 else 0
         
         return {
-            "method": "P/E Ratio",
+            "method": "Relación P/E",
             "intrinsic_value": intrinsic_value,
             "current_price": current_price,
             "eps": eps,
@@ -152,31 +152,31 @@ class ValuationEngine:
         forecast_years: int = 5
     ) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using Dividend Discount Model (DDM).
+        Calcular el valor intrínseco usando el Modelo de Descuento de Dividendos (DDM).
         
-        For a two-stage model:
-        - Stage 1: Higher growth rate for forecast_years
-        - Stage 2: Terminal value with perpetual growth
+        Para un modelo de dos etapas:
+        - Etapa 1: Tasa de crecimiento superior durante forecast_years
+        - Etapa 2: Valor terminal con crecimiento perpetuo
         
         Args:
-            required_return: Required rate of return (discount rate)
-            growth_rate: Expected dividend growth rate for stage 1
-            terminal_growth: Perpetual growth rate for terminal value
-            forecast_years: Number of years for stage 1
+            required_return: Tasa requerida (descuento)
+            growth_rate: Tasa de crecimiento de dividendos (etapa 1)
+            terminal_growth: Tasa de crecimiento perpetua
+            forecast_years: Número de años de la etapa 1
             
         Returns:
-            Dictionary with DDM analysis
+            Diccionario con el análisis DDM
         """
         dividend = self.data_loader.get_dividend_per_share()
         current_price = self.data_loader.get_current_price()
         
         if dividend <= 0:
             return {
-                "method": "Dividend Discount Model",
+                "method": "Modelo de Descuento de Dividendos (DDM)",
                 "intrinsic_value": 0,
                 "current_price": current_price,
                 "dividend_per_share": dividend,
-                "error": "Company does not pay dividends or dividend data unavailable",
+                "error": "La compañía no paga dividendos o los datos de dividendos no están disponibles",
                 "upside_potential": 0
             }
         
@@ -203,7 +203,7 @@ class ValuationEngine:
         intrinsic_value = pv_stage1 + pv_terminal
         
         return {
-            "method": "Dividend Discount Model",
+            "method": "Modelo de Descuento de Dividendos (DDM)",
             "intrinsic_value": intrinsic_value,
             "current_price": current_price,
             "dividend_per_share": dividend,
@@ -220,12 +220,12 @@ class ValuationEngine:
     
     def comparable_companies_valuation(self) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using Comparable Companies Analysis.
+        Calcular el valor intrínseco usando análisis de empresas comparables.
         
-        Uses peer company multiples (P/E, P/B) to estimate fair value.
+        Usa múltiplos de empresas pares (P/E, P/B) para estimar el valor.
         
         Returns:
-            Dictionary with comparables analysis
+            Diccionario con el análisis de comparables
         """
         current_price = self.data_loader.get_current_price()
         eps = self.data_loader.get_earnings_per_share()
@@ -235,10 +235,10 @@ class ValuationEngine:
         
         if peer_data.empty:
             return {
-                "method": "Comparable Companies",
+                "method": "Empresas Comparables",
                 "intrinsic_value": 0,
                 "current_price": current_price,
-                "error": "Unable to fetch peer data",
+                "error": "No fue posible obtener datos de empresas pares",
                 "upside_potential": 0
             }
         
@@ -260,7 +260,7 @@ class ValuationEngine:
         avg_implied_value = np.mean(values) if values else 0
         
         return {
-            "method": "Comparable Companies",
+            "method": "Empresas Comparables",
             "intrinsic_value": avg_implied_value,
             "current_price": current_price,
             "eps": eps,
@@ -281,18 +281,18 @@ class ValuationEngine:
         forecast_years: int = 5
     ) -> Dict[str, Any]:
         """
-        Calculate intrinsic value using DCF (Free Cash Flow) method.
+        Calcular el valor intrínseco usando DCF (Flujo de Caja Libre).
         
-        Discounts projected free cash flows to present value.
+        Descuenta los flujos de caja proyectados al valor presente.
         
         Args:
-            required_return: Weighted average cost of capital (WACC)
-            growth_rate: Expected FCF growth rate for stage 1
-            terminal_growth: Perpetual growth rate for terminal value
-            forecast_years: Number of years for explicit forecast
+            required_return: Coste medio ponderado de capital (WACC)
+            growth_rate: Tasa de crecimiento esperada del FCF (etapa 1)
+            terminal_growth: Tasa perpetua de crecimiento
+            forecast_years: Años de pronóstico explícito
             
         Returns:
-            Dictionary with DCF/FCF analysis
+            Diccionario con el análisis DCF/FCF
         """
         fcf = self.data_loader.get_free_cash_flow()
         shares_outstanding = self.data_loader.get_shares_outstanding()
@@ -300,11 +300,11 @@ class ValuationEngine:
         
         if fcf <= 0:
             return {
-                "method": "DCF (Free Cash Flow)",
+                "method": "DCF (Flujo de Caja Libre)",
                 "intrinsic_value": 0,
                 "current_price": current_price,
                 "free_cash_flow": fcf,
-                "error": "Negative or zero free cash flow",
+                "error": "Flujo de caja libre negativo o cero",
                 "upside_potential": 0
             }
         
@@ -335,7 +335,7 @@ class ValuationEngine:
         equity_value_per_share = enterprise_value / shares_outstanding if shares_outstanding > 0 else 0
         
         return {
-            "method": "DCF (Free Cash Flow)",
+            "method": "DCF (Flujo de Caja Libre)",
             "intrinsic_value": equity_value_per_share,
             "current_price": current_price,
             "free_cash_flow": fcf,
