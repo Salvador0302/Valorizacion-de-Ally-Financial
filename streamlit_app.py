@@ -23,7 +23,6 @@ from src.data_loader import DataLoader
 from src.valuation import ValuationEngine
 from src.monte_carlo import MonteCarloSimulation
 from src.sec_analyzer import SECAnalyzer, format_report_for_display
-from src.chatbot import ValuationChatbot
 from src.revenue_analysis import RevenueAnalyzer, format_currency
 
 # Configuración de la página
@@ -172,33 +171,14 @@ try:
         st.warning(f"⚠️ No se pudo cargar el análisis de revenue: {str(e)}")
         revenue_summary = {}
     
-    # Inicializar chatbot en session state si no existe
-    if 'chatbot' not in st.session_state:
-        try:
-            st.session_state['chatbot'] = ValuationChatbot()
-            st.session_state['chatbot'].set_context(
-                ticker=ticker,
-                current_price=current_price,
-                fair_value=fair_value_data['fair_value_estimate'],
-                valuations=valuations,
-                mc_results=mc_results,
-                sec_report=st.session_state.get('sec_report', {}),
-                summary=summary,
-                revenue_summary=revenue_summary
-            )
-        except Exception as e:
-            st.warning(f"⚠️ Chatbot no disponible: {str(e)}")
-            st.session_state['chatbot'] = None
-    
-    # Contenido principal - Tabs principales
-    main_tab1, main_tab2, main_tab3, main_tab4 = st.tabs([
-        "📊 Valoración Tradicional",
+    # Contenido principal - Tabs principales (Ventas primero)
+    main_tab1, main_tab2, main_tab3 = st.tabs([
         "💰 Análisis de Ventas (Revenue)",
-        "🤖 Análisis IA - Reportes SEC",
-        "💬 Chatbot Financiero"
+        "📊 Valoración Tradicional",
+        "🤖 Análisis IA - Reportes SEC"
     ])
     
-    with main_tab2:
+    with main_tab1:
         # Análisis de Ventas (Revenue)
         st.header("💰 Análisis de Ventas y Revenue")
         
@@ -869,141 +849,7 @@ try:
                 else:
                     st.info("No se identificaron drivers de ingresos en el análisis")
     
-    with main_tab4:
-        # Chatbot Financiero
-        st.header("💬 Chatbot Financiero con IA")
-        
-        st.markdown("""
-        Chatea con nuestro asistente financiero inteligente para interpretar los resultados del análisis.
-        El chatbot tiene acceso completo a:
-        - 📊 Resultados de valoración
-        - 💰 Análisis de ventas (Revenue)
-        - 📈 Análisis Monte Carlo
-        - 🤖 Reportes SEC analizados
-        - 💰 Métricas financieras
-        """)
-        
-        # Botones de acción
-        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
-        
-        with col_btn1:
-            if st.button("🔄 Nueva Conversación"):
-                st.session_state['chatbot'].clear_history()
-                st.session_state['chatbot'].set_context(
-                    ticker=ticker,
-                    current_price=current_price,
-                    fair_value=fair_value_data['fair_value_estimate'],
-                    valuations=valuations,
-                    mc_results=mc_results,
-                    sec_report=st.session_state.get('sec_report', {}),
-                    summary=summary,
-                    revenue_summary=revenue_summary
-                )
-                st.rerun()
-        
-        with col_btn2:
-            show_suggestions = st.button("💡 Sugerencias")
-        
-        # Mostrar sugerencias de preguntas
-        if show_suggestions or 'show_suggestions' not in st.session_state:
-            st.session_state['show_suggestions'] = True
-        
-        if st.session_state.get('show_suggestions', False):
-            st.markdown("### 💡 Preguntas Sugeridas:")
-            suggestions = st.session_state['chatbot'].suggest_questions()
-            
-            cols = st.columns(2)
-            for idx, suggestion in enumerate(suggestions):
-                col_idx = idx % 2
-                with cols[col_idx]:
-                    if st.button(f"❓ {suggestion}", key=f"sug_{idx}"):
-                        # Agregar pregunta al historial y obtener respuesta
-                        response = st.session_state['chatbot'].chat(suggestion)
-                        st.session_state['show_suggestions'] = False
-                        st.rerun()
-        
-        st.markdown("---")
-        
-        # Área de chat
-        st.markdown("### 💬 Conversación")
-        
-        # Contenedor de chat con altura fija
-        chat_container = st.container()
-        
-        with chat_container:
-            # Mostrar historial de conversación
-            history = st.session_state['chatbot'].get_conversation_history()
-            
-            if not history:
-                st.info("👋 ¡Hola! Soy tu asistente financiero. Pregúntame lo que quieras sobre el análisis de valoración.")
-            else:
-                for entry in history:
-                    # Mensaje del usuario
-                    st.markdown(f"""
-                    <div style="background-color: #e3f2fd; padding: 12px; border-radius: 10px; 
-                                margin: 8px 0; border-left: 4px solid #2196F3;">
-                        <strong>🧑 Tú:</strong><br>{entry['user']}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Respuesta del asistente
-                    st.markdown(f"""
-                    <div style="background-color: #f5f5f5; padding: 12px; border-radius: 10px; 
-                                margin: 8px 0; border-left: 4px solid #4CAF50;">
-                        <strong>🤖 Asistente:</strong><br>{entry['assistant']}
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Input para nueva pregunta
-        with st.form(key="chat_form", clear_on_submit=True):
-            col_input, col_submit = st.columns([4, 1])
-            
-            with col_input:
-                user_input = st.text_input(
-                    "Tu pregunta:",
-                    placeholder="Ej: ¿Es buen momento para comprar esta acción?",
-                    label_visibility="collapsed"
-                )
-            
-            with col_submit:
-                submit_button = st.form_submit_button("📤 Enviar", use_container_width=True)
-            
-            if submit_button and user_input:
-                # Ocultar sugerencias
-                st.session_state['show_suggestions'] = False
-                
-                # Obtener respuesta del chatbot
-                with st.spinner("🤔 Pensando..."):
-                    response = st.session_state['chatbot'].chat(user_input)
-                
-                # Recargar para mostrar la nueva conversación
-                st.rerun()
-        
-        # Información adicional
-        st.markdown("---")
-        with st.expander("ℹ️ Información sobre el Chatbot"):
-            st.markdown("""
-            **Capacidades:**
-            - ✅ Interpreta resultados de valoración
-            - ✅ Explica conceptos financieros
-            - ✅ Analiza riesgos y oportunidades
-            - ✅ Proporciona recomendaciones basadas en datos
-            - ✅ Responde preguntas sobre KPIs y métricas
-            
-            **Limitaciones:**
-            - ❌ No tiene acceso a datos en tiempo real fuera del análisis
-            - ❌ No es asesoría financiera profesional certificada
-            - ❌ Las respuestas son para fines educativos e informativos
-            
-            **Consejos:**
-            - Sé específico en tus preguntas
-            - Pregunta sobre aspectos concretos del análisis
-            - Usa las preguntas sugeridas como punto de partida
-            """)
-    
-    with main_tab1:
+    with main_tab2:
         # Métricas clave
         st.header("📈 Métricas Financieras Clave")
     
