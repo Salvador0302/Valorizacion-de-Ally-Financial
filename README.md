@@ -1,6 +1,6 @@
-# Proyecto de Valoración de Ally Financial (ALLY)
+# Grupo 8 - Monografía 2: Valoración de Ally Financial (ALLY)
 
-**Análisis integral de valoración de acciones de Ally Financial usando métodos financieros clásicos y predicciones con IA.**
+**Análisis integral de valoración de acciones y ventas de Ally Financial usando métodos financieros clásicos, análisis de revenue y predicciones con IA.**
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
@@ -8,7 +8,7 @@
 
 ## 📋 Resumen
 
-Este proyecto ofrece un análisis integral de valoración de la acción de Ally Financial (ALLY) utilizando varios enfoques:
+Este proyecto ofrece un análisis integral de valoración y ventas (revenue) de Ally Financial (ALLY) utilizando varios enfoques:
 
 ### 📊 Métodos de Valoración Tradicionales
 - **Valor Contable** - Valoración básica por patrimonio
@@ -17,6 +17,13 @@ Este proyecto ofrece un análisis integral de valoración de la acción de Ally 
 - **Modelo de Descuento de Dividendos (DDM)** - Valor presente de dividendos futuros
 - **Empresas Comparables** - Comparación mediante múltiplos de pares
 - **DCF (Flujo de Caja Libre)** - Valoración por descuento de flujos de caja
+
+### 💰 Análisis de Ventas (Revenue)
+- **Histórico de Revenue** - Análisis anual y trimestral
+- **Tasas de Crecimiento** - YoY, QoQ, CAGR
+- **Proyecciones Futuras** - Forecasting con múltiples métodos
+- **Drivers de Revenue** - Identificación de factores clave
+- **Análisis de Estacionalidad** - Patrones trimestrales
 
 ### 🤖 Modelos de IA/ML
 - **Red Neural LSTM** - Modelo de deep learning para predicción de precios

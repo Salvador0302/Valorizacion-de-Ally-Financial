@@ -39,7 +39,8 @@ class ValuationChatbot:
                     valuations: Dict = None,
                     mc_results: Dict = None,
                     sec_report: Dict = None,
-                    summary: Dict = None):
+                    summary: Dict = None,
+                    revenue_summary: Dict = None):
         """
         Establecer el contexto del análisis para el chatbot.
         
@@ -51,6 +52,7 @@ class ValuationChatbot:
             mc_results: Resultados de Monte Carlo
             sec_report: Reporte de análisis SEC
             summary: Resumen financiero
+            revenue_summary: Análisis de revenue
         """
         self.context = {
             'ticker': ticker,
@@ -60,7 +62,8 @@ class ValuationChatbot:
             'valuations': valuations or {},
             'mc_results': mc_results or {},
             'sec_report': sec_report or {},
-            'summary': summary or {}
+            'summary': summary or {},
+            'revenue_summary': revenue_summary or {}
         }
         
         # Iniciar nueva sesión de chat con contexto
@@ -167,6 +170,29 @@ class ValuationChatbot:
                 parts.append("\n**KPIs Clave:**")
                 for i, kpi in enumerate(sec_report['kpis'][:5], 1):
                     parts.append(f"{i}. {kpi.get('nombre', 'N/A')}: {kpi.get('valor', 'N/A')}")
+        
+        # Análisis de Revenue
+        revenue_summary = self.context.get('revenue_summary', {})
+        if revenue_summary:
+            ttm_rev = revenue_summary.get('ttm_revenue', 0)
+            latest_q = revenue_summary.get('latest_quarterly_revenue', 0)
+            growth_metrics = revenue_summary.get('growth_metrics', {})
+            
+            parts.append(f"""
+            **Análisis de Revenue:**
+            - Revenue TTM: ${ttm_rev/1e9:.2f}B
+            - Último Trimestre: ${latest_q/1e9:.2f}B
+            - Crecimiento YoY: {growth_metrics.get('latest_growth', 0):.2f}%
+            - CAGR: {growth_metrics.get('cagr', 0):.2f}%
+            - Crecimiento Promedio: {growth_metrics.get('avg_annual_growth', 0):.2f}%
+            """)
+            
+            # Drivers de revenue
+            drivers_data = revenue_summary.get('revenue_drivers', {})
+            if drivers_data.get('success') and drivers_data.get('drivers'):
+                parts.append("\n**Principales Drivers de Revenue:**")
+                for i, driver in enumerate(drivers_data['drivers'][:3], 1):
+                    parts.append(f"{i}. {driver.get('driver', 'N/A')} (Importancia: {driver.get('importance', 'N/A')})")
         
         return "\n".join(parts)
     
